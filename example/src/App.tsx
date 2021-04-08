@@ -1,9 +1,7 @@
 import * as React from 'react';
 
 import { StyleSheet, View, Text, TouchableOpacity, NativeModules } from 'react-native';
-import AwesomeModuleViewManager from 'react-native-awesome-module';
-
-const { ArCoreViewModule } = NativeModules;
+import AwesomeModuleViewManager from 'ar-core-react-native';
 
 export default function App() {
   return (
