@@ -60,6 +60,11 @@ public class ArCoreView extends FrameLayout {
     this.context = context;
     init();
   }
+  @RequiresApi(api = Build.VERSION_CODES.N)
+  public ArCoreView() {
+    super(reactActivity);
+//    init();
+  }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {
@@ -176,7 +181,7 @@ public class ArCoreView extends FrameLayout {
             .exceptionally(
               throwable -> {
                 Toast toast =
-                  Toast.makeText(reactActivity, "Unable to load andy renderable", Toast.LENGTH_LONG);
+                  Toast.makeText(reactActivity, "Unable to load andy renderable:"+throwable.toString(), Toast.LENGTH_LONG);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
                 return null;
@@ -211,7 +216,7 @@ public class ArCoreView extends FrameLayout {
       .exceptionally(
         throwable -> {
           Toast toast =
-            Toast.makeText(reactActivity, "Unable to load andy renderable", Toast.LENGTH_LONG);
+            Toast.makeText(reactActivity, "Unable to load andy renderable:"+throwable.toString(), Toast.LENGTH_LONG);
           toast.setGravity(Gravity.CENTER, 0, 0);
           toast.show();
           return null;

@@ -1,6 +1,7 @@
 package com.arcorereactnative;
 
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -21,22 +22,22 @@ public class ArCoreModulePackage implements ReactPackage {
   @RequiresApi(api = Build.VERSION_CODES.N)
   @NonNull
   @Override
-  public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
-    List<NativeModule> modules = new ArrayList<>();
-    if (arCoreModuleViewManager == null){
-      arCoreModuleViewManager = new ArCoreModuleViewManager(reactContext);
+  public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
+    if (this.arCoreModuleViewManager == null || this.arCoreModuleViewManager.getArCoreViews() == null) {
+      Log.e("BUILD", "createViewManagers");
+      this.arCoreModuleViewManager = new ArCoreModuleViewManager(reactContext);
     }
-    modules.add(new ArCoreViewModule(reactContext, arCoreModuleViewManager));
-    return modules;
+    return Arrays.<ViewManager>asList(this.arCoreModuleViewManager);
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.N)
   @NonNull
   @Override
-  public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
-    if (arCoreModuleViewManager == null) {
-      arCoreModuleViewManager = new ArCoreModuleViewManager(reactContext);
+  public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
+    if (this.arCoreModuleViewManager == null || this.arCoreModuleViewManager.getArCoreViews() == null) {
+      this.arCoreModuleViewManager = new ArCoreModuleViewManager(reactContext);
+      Log.e("BUILD", "createNativeModules");
     }
-
-    return Arrays.<ViewManager>asList(arCoreModuleViewManager);
+    return Arrays.<NativeModule>asList(new ArCoreViewModule(reactContext, this.arCoreModuleViewManager));
   }
 }

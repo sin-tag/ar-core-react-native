@@ -8,7 +8,7 @@ export default function App() {
     <View style={styles.container}>
       <AwesomeModuleViewManager color="#32a852" style={styles.box} />
       <TouchableOpacity onPress={() => {
-        ArCoreViewModule.changeObject("chair2.sfb")
+        ArCoreViewModule.changeObject("chair.sfb")
       }} style={{position: 'absolute', top: 30, left: 0, right: 0, justifyContent: 'center', alignItems: 'center'}}>
         <Text>Bam</Text>
       </TouchableOpacity>
