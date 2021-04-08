@@ -1,0 +1,166 @@
+{
+  materials: [
+    {
+      name: 'leather',
+      parameters: [
+        {
+          baseColor: 'leather_baseColor',
+        },
+        {
+          baseColorTint: [
+            0.80000000000000004,
+            0.80000000000000004,
+            0.80000000000000004,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.085521,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+    {
+      name: 'metal',
+      parameters: [
+        {
+          baseColor: 'metal_baseColor',
+        },
+        {
+          baseColorTint: [
+            0.80000000000000004,
+            0.80000000000000004,
+            0.80000000000000004,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.093865000000000004,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+    {
+      name: 'plastic',
+      parameters: [
+        {
+          baseColor: 'plastic_baseColor',
+        },
+        {
+          baseColorTint: [
+            0.80000000000000004,
+            0.80000000000000004,
+            0.80000000000000004,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.093865000000000004,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+    {
+      name: 'wood',
+      parameters: [
+        {
+          baseColor: 'wood_baseColor',
+        },
+        {
+          baseColorTint: [
+            0.80000000000000004,
+            0.80000000000000004,
+            0.80000000000000004,
+            1,
+          ],
+        },
+        {
+          metallic: 1,
+        },
+        {
+          roughness: 0.093865000000000004,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+  ],
+  model: {
+    attributes: [
+      'Position',
+      'TexCoord',
+      'Orientation',
+    ],
+    collision: {},
+    file: 'sampledata/3Dmodels/chair.obj',
+    name: 'chair',
+    recenter: 'root',
+  },
+  samplers: [
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\leather_baseColor.jpeg',
+      name: 'leather_baseColor',
+      pipeline_name: 'textures\\\\leather_baseColor.jpeg',
+    },
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\plastic_baseColor.jpeg',
+      name: 'plastic_baseColor',
+      pipeline_name: 'textures\\\\plastic_baseColor.jpeg',
+    },
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\leather_normal.jpeg',
+      name: 'leather_normal',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'textures\\\\leather_normal.jpeg',
+    },
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\metal_baseColor.jpeg',
+      name: 'metal_baseColor',
+      pipeline_name: 'textures\\\\metal_baseColor.jpeg',
+    },
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\wood_baseColor.jpeg',
+      name: 'wood_baseColor',
+      pipeline_name: 'textures\\\\wood_baseColor.jpeg',
+    },
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\plastic_normal.jpeg',
+      name: 'plastic_normal',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'textures\\\\plastic_normal.jpeg',
+    },
+    {
+      file: 'sampledata/3Dmodels\\textures\\\\wood_normal.jpeg',
+      name: 'wood_normal',
+      params: {
+        usage_type: 'Data',
+      },
+      pipeline_name: 'textures\\\\wood_normal.jpeg',
+    },
+  ],
+  version: '0.54:2',
+}

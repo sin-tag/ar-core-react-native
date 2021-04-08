@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/bottom_sheet_layout"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_gravity="center_horizontal"
+  android:background="#ffffff"
+  android:gravity="center_horizontal"
+  android:orientation="vertical"
+  android:padding="8dp"
+  app:behavior_hideable="true"
+  app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+  <LinearLayout
+    android:id="@+id/gesture_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <ImageView
+      android:id="@+id/bottom_sheet_arrow"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:src="@drawable/icn_chevron_up" />
+
+    <View
+      android:layout_width="match_parent"
+      android:layout_height="1px"
+      android:layout_marginTop="8dp"
+      android:background="@android:color/darker_gray" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Thông tin đối tượng hiện tại"
+      android:textColor="@android:color/black" />
+
+    <TextView
+      android:id="@+id/frame_info"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:gravity="right"
+      android:text="2m*5m"
+      android:textColor="@android:color/black" />
+  </LinearLayout>
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Khoảng cách đến camera"
+      android:textColor="@android:color/black" />
+
+    <TextView
+      android:id="@+id/distance_information"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:gravity="right"
+      android:textColor="@android:color/black" />
+  </LinearLayout>
+
+  <View
+    android:layout_width="match_parent"
+    android:layout_height="1px"
+    android:layout_marginTop="10dp"
+    android:background="@android:color/darker_gray" />
+
+  <RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Chọn sản phẩm"
+      android:textColor="@android:color/black" />
+
+    <Spinner
+      android:id="@+id/model_spinner"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_alignParentRight="true"
+      android:layout_marginTop="10dp" />
+  </RelativeLayout>
+
+</LinearLayout>

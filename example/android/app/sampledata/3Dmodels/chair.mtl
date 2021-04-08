@@ -1,0 +1,96 @@
+# Blender MTL File: 'None'
+# Material Count: 8
+
+newmtl leather
+Ns 271.456836
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures\\leather_normal.jpeg
+map_Kd textures\\leather_baseColor.jpeg
+
+newmtl leather.001
+Ns 271.456836
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures\\leather_normal.jpeg
+map_Kd textures\\leather_baseColor.jpeg
+
+newmtl metal
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd textures\\metal_baseColor.jpeg
+
+newmtl metal.001
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd textures\\metal_baseColor.jpeg
+
+newmtl plastic
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures\\plastic_normal.jpeg
+map_Kd textures\\plastic_baseColor.jpeg
+
+newmtl plastic.001
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures\\plastic_normal.jpeg
+map_Kd textures\\plastic_baseColor.jpeg
+
+newmtl wood
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures\\wood_normal.jpeg
+map_Kd textures\\wood_baseColor.jpeg
+
+newmtl wood.001
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures\\wood_normal.jpeg
+map_Kd textures\\wood_baseColor.jpeg

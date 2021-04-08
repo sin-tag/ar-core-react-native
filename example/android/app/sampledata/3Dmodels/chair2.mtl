@@ -1,0 +1,34 @@
+# Blender MTL File: 'None'
+# Material Count: 3
+
+newmtl ScrewHoleMaterial
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl ScrewMaterial
+Ns 2.081717
+Ka 1.000000 1.000000 1.000000
+Kd 0.167951 0.167951 0.167951
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl WoodMaterial
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump textures2\\WoodMaterial_normal.png
+map_Kd textures2\\WoodMaterial_baseColor.jpeg
