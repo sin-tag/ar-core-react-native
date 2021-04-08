@@ -1,5 +1,5 @@
 {
-    "name": "react-native-awesome-module",
+    "name": "ar-core-react-native",
     "version": "0.1.0",
     "description": "test native module",
     "main": "lib/commonjs/index",
@@ -13,7 +13,7 @@
       "android",
       "ios",
       "cpp",
-      "react-native-awesome-module.podspec",
+      "ar-core-react-native.podspec",
       "!lib/typescript/example",
       "!android/build",
       "!ios/build",
@@ -36,13 +36,13 @@
       "ios",
       "android"
     ],
-    "repository": "http://fb.com/canh7antt8a",
+    "repository": "https://github.com/sin-tag/ar-core-react-native",
     "author": "CanhLV <canhlv@d2t.vn> (http://fb.com/canh7antt)",
-    "license": "MIT",
+    "license": "BSD-3-Clause",
     "bugs": {
-      "url": "http://fb.com/canh7antt8a/issues"
+      "url": "https://github.com/sin-tag/ar-core-react-native/issues"
     },
-    "homepage": "http://fb.com/canh7antt8a#readme",
+    "homepage": "https://github.com/sin-tag/ar-core-react-native#readme",
     "publishConfig": {
       "registry": "https://registry.npmjs.org/"
     },
