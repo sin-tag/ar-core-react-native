@@ -6,7 +6,7 @@ type AwesomeModuleProps = {
 };
 
 export const AwesomeModuleViewManager = requireNativeComponent<AwesomeModuleProps>(
-  'AwesomeModuleView'
+  'arCoreModuleViewManager'
 );
 
 export default AwesomeModuleViewManager;

@@ -3,7 +3,7 @@ package com.example.reactnativeawesomemodule;
 import android.os.Bundle;
 
 import com.facebook.react.ReactActivity;
-import com.reactnativeawesomemodule.ArCoreView;
+import com.arcorereactnative.ArCoreView;
 
 public class MainActivity extends ReactActivity {
 
