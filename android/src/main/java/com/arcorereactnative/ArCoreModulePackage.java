@@ -23,6 +23,9 @@ public class ArCoreModulePackage implements ReactPackage {
   @Override
   public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
     List<NativeModule> modules = new ArrayList<>();
+    if (arCoreModuleViewManager == null){
+      arCoreModuleViewManager = new ArCoreModuleViewManager(reactContext);
+    }
     modules.add(new ArCoreViewModule(reactContext, arCoreModuleViewManager));
     return modules;
   }
@@ -30,6 +33,10 @@ public class ArCoreModulePackage implements ReactPackage {
   @NonNull
   @Override
   public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
-    return Arrays.<ViewManager>asList(new ArCoreModuleViewManager(reactContext));
+    if (arCoreModuleViewManager == null) {
+      arCoreModuleViewManager = new ArCoreModuleViewManager(reactContext);
+    }
+
+    return Arrays.<ViewManager>asList(arCoreModuleViewManager);
   }
 }

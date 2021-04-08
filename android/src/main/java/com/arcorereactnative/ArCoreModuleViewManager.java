@@ -8,12 +8,13 @@ import androidx.annotation.RequiresApi;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.ViewGroupManager;
 
-public class ArCoreModuleViewManager extends SimpleViewManager<ArCoreView> {
+public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
   private ArCoreView arCoreView;
 
   public ArCoreModuleViewManager(ReactApplicationContext reactContext) {
-
+    super();
   }
 
 
@@ -24,9 +25,8 @@ public class ArCoreModuleViewManager extends SimpleViewManager<ArCoreView> {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
-  @NonNull
   @Override
-  protected ArCoreView createViewInstance(@NonNull ThemedReactContext reactContext) {
+  public ArCoreView createViewInstance(@NonNull ThemedReactContext reactContext) {
     arCoreView = new ArCoreView(reactContext);
     return arCoreView;
   }

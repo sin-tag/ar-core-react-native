@@ -34,7 +34,6 @@ import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
-import com.reactnativeawesomemodule.R;
 
 public class ArCoreView extends FrameLayout {
   public static ReactActivity reactActivity = null;
