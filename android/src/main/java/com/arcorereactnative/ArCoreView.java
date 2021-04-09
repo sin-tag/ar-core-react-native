@@ -60,11 +60,6 @@ public class ArCoreView extends FrameLayout {
     this.context = context;
     init();
   }
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  public ArCoreView() {
-    super(reactActivity);
-//    init();
-  }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {

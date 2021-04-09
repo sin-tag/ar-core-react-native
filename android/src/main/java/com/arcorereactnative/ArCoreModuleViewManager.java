@@ -14,7 +14,7 @@ import com.facebook.react.uimanager.ViewGroupManager;
 
 public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
   @SuppressLint("StaticFieldLeak")
-  public static ArCoreView arCoreView;
+  public ArCoreView arCoreView;
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public ArCoreModuleViewManager(ReactApplicationContext reactContext) {

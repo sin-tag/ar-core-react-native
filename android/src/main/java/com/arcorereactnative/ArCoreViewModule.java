@@ -16,18 +16,10 @@ import com.facebook.react.bridge.ReactMethod;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 
 public class ArCoreViewModule extends ReactContextBaseJavaModule {
-  private ArCoreModuleViewManager arCoreView;
 
   @RequiresApi(api = Build.VERSION_CODES.N)
-  ArCoreViewModule(ReactApplicationContext context, ArCoreModuleViewManager viewManager) {
+  ArCoreViewModule(ReactApplicationContext context) {
     super(context);
-//    Log.e("MAM", viewManager.getArCoreView().toString());
-    if (viewManager != null) {
-      Log.d("viewManager", "Not Null");
-      arCoreView = viewManager;
-    } else {
-      Log.d("viewManager", "Null viewManager");
-    }
 
   }
 
@@ -38,9 +30,9 @@ public class ArCoreViewModule extends ReactContextBaseJavaModule {
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   @ReactMethod
-  public void changeObject(String path) {
-    Log.e("OBJECT", ArCoreModuleViewManager.arCoreView.toString());
-    ArCoreModuleViewManager.arCoreView.changeObject(path);
+  public void changeObject(String path, ArCoreView arCoreView) {
+    Log.e("OBJECT", arCoreView.toString());
+    arCoreView.changeObject(path);
   }
 
 }
