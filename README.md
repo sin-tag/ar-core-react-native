@@ -1,2 +1,2 @@
 # ar-core-react-native
-AR for React-Native base in Sceneform and AR KIt
+ARView for React-Native base in Sceneform(ARCore) and AR KIt
