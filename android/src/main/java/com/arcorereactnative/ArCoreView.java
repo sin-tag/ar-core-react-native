@@ -21,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import com.facebook.react.ReactActivity;
-import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.ar.core.Anchor;
