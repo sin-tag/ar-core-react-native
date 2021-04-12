@@ -1,6 +1,6 @@
 {
     "name": "ar-core-react-native",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "test native module",
     "main": "lib/commonjs/index",
     "module": "lib/module/index",
@@ -25,19 +25,21 @@
       "test": "jest",
       "typescript": "tsc --noEmit",
       "lint": "eslint \"**/*.{js,ts,tsx}\"",
-      "prepare": "bob build",
       "release": "release-it",
-      "example": "yarn --cwd example",
+      "example": "npm --cwd example",
       "pods": "cd example && pod-install --quiet",
-      "bootstrap": "yarn example && yarn && yarn pods"
+      "bootstrap": "npm example && yarn && yarn pods"
     },
     "keywords": [
       "react-native",
       "ios",
       "android"
     ],
-    "repository": "https://github.com/sin-tag/ar-core-react-native",
-    "author": "Sin-tag <vuquangtuyensk@gmail.com> (http://fb.com/vqht.hacking)",
+    "repository": {
+      "type": "git",
+      "url":"https://github.com/sin-tag/ar-core-react-native.git"
+    },
+    "author": "Sin-tag <vuquangtuyensk@gmail.com> (http://fb.com/vqht.dev)",
     "license": "BSD-3-Clause",
     "bugs": {
       "url": "https://github.com/sin-tag/ar-core-react-native/issues"

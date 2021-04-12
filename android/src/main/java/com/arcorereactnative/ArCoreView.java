@@ -34,9 +34,12 @@ import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class ArCoreView extends FrameLayout {
   public static ReactActivity reactActivity = null;
   private ThemedReactContext context;
+
   private ArFragment arFragment;
   private ModelRenderable objectRender;
   private Float SCALE = 0.1f;
@@ -60,27 +63,14 @@ public class ArCoreView extends FrameLayout {
     init();
   }
 
+  @SuppressLint("ShowToast")
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {
     inflate(reactActivity, R.layout.activity_main, this);
     arFragment = (ArFragment) reactActivity.getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
-    Uri uri = Uri.parse("chair2.sfb");
-    Log.e("URI", uri.toString());
-    ModelRenderable.builder()
-      .setSource(reactActivity, uri)
-      .build()
-      .thenAccept(modelRenderable -> objectRender = modelRenderable)
-      .exceptionally(
-        throwable -> {
-          Toast toast =
-            Toast.makeText(reactActivity, "Unable to load andy renderable", Toast.LENGTH_LONG);
-          toast.setGravity(Gravity.CENTER, 0, 0);
-          toast.show();
-          return null;
-        }
-      );
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
       if (objectRender == null) {
+        Toast.makeText(reactActivity, "Not found object loader", Toast.LENGTH_LONG);
         Log.e("LOI", "ANH NULL");
         return;
       }
@@ -93,7 +83,6 @@ public class ArCoreView extends FrameLayout {
       object.setParent(anchorNode);
       object.setRenderable(objectRender);
       object.select();
-
       object.setLocalScale(new Vector3(0.5f, 0.5f, 0.5f));
       object.getRotationController().setEnabled(true);
       object.getScaleController().setEnabled(true);
@@ -175,7 +164,7 @@ public class ArCoreView extends FrameLayout {
             .exceptionally(
               throwable -> {
                 Toast toast =
-                  Toast.makeText(reactActivity, "Unable to load andy renderable:"+throwable.toString(), Toast.LENGTH_LONG);
+                  Toast.makeText(reactActivity, "Unable to load andy renderable:" + throwable.toString(), Toast.LENGTH_LONG);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
                 return null;
@@ -201,7 +190,8 @@ public class ArCoreView extends FrameLayout {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
-  public void changeObject(String uriString) {
+  public boolean changeObject(String uriString) {
+    AtomicBoolean loadComplete = new AtomicBoolean(true);
     Uri uri = Uri.parse(uriString);
     ModelRenderable.builder()
       .setSource(reactActivity, uri)
@@ -210,11 +200,13 @@ public class ArCoreView extends FrameLayout {
       .exceptionally(
         throwable -> {
           Toast toast =
-            Toast.makeText(reactActivity, "Unable to load andy renderable:"+throwable.toString(), Toast.LENGTH_LONG);
+            Toast.makeText(reactActivity, "Cant't load object, because:" + throwable.toString(), Toast.LENGTH_LONG);
           toast.setGravity(Gravity.CENTER, 0, 0);
           toast.show();
+          loadComplete.set(false);
           return null;
         });
+    return loadComplete.get();
   }
 
   @SuppressLint("SetTextI18n")
@@ -239,11 +231,16 @@ public class ArCoreView extends FrameLayout {
     return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
   }
 
-  public void deleteNodeObject() {
-    arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
-    anchorNodeDelete.getAnchor().detach();
-    anchorNodeDelete.setParent(null);
-    anchorNodeDelete = null;
+  public void deleteNodeObject(Boolean delete) {
+    if (delete) {
+      arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
+      anchorNodeDelete.getAnchor().detach();
+      anchorNodeDelete.setParent(null);
+      anchorNodeDelete = null;
+    } else {
+
+    }
+
   }
 
 
