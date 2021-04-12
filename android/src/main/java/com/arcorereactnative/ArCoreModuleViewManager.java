@@ -55,11 +55,9 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
-  @ReactProp(name = "object")
-  public void setObject(ArCoreView arCoreView, String object, Promise promise) {
-    boolean res = arCoreView.changeObject(object);
-    promise.resolve(res);
-    promise.reject("LOAD_MODEL", "Can't load model");
+  @ReactProp(name = "object_name")
+  public void setObject(ArCoreView arCoreView, String object_name) {
+    boolean res = arCoreView.changeObject(object_name);
   }
 
   @ReactProp(name = "delete")
