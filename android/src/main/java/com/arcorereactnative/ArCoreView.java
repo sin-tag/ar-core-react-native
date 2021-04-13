@@ -26,6 +26,7 @@ import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.File;
 
 public class ArCoreView extends FrameLayout {
   public static ReactActivity reactActivity = null;
@@ -36,6 +37,7 @@ public class ArCoreView extends FrameLayout {
   private Float SCALE = 0.1f;
   private AnchorNode anchorNodeDelete;
   private AnchorNode anchorNodeSelected;
+  private String idItem;
   private LinearLayout gestureLayout;
 
   public static void setContext(ReactActivity context) {
@@ -57,13 +59,13 @@ public class ArCoreView extends FrameLayout {
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
       if (objectRender == null) {
         Toast.makeText(reactActivity, "Not found object loader", Toast.LENGTH_LONG);
-        Log.e("LOI", "ANH NULL");
+        Log.e("LOAD_OBJECT", "Can't not find from cache");
         return;
       }
       Anchor anchor = hitResult.createAnchor();
       AnchorNode anchorNode = new AnchorNode(anchor);
       anchorNode.setParent(arFragment.getArSceneView().getScene());
-
+      anchorNode.setName(nameItem);
       // add
       TransformableNode object = new TransformableNode(arFragment.getTransformationSystem());
       object.setParent(anchorNode);
@@ -88,9 +90,9 @@ public class ArCoreView extends FrameLayout {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
-  public boolean changeObject(String uriString) {
+  public boolean setObject(String uriString) {
     AtomicBoolean loadComplete = new AtomicBoolean(true);
-    Uri uri = Uri.parse(uriString);
+    Uri uri = Uri.fromFile(new File(uriString));
     ModelRenderable.builder()
       .setSource(reactActivity, uri)
       .build()
@@ -143,6 +145,14 @@ public class ArCoreView extends FrameLayout {
 
   public static ReactActivity getActivity() {
     return reactActivity;
+  }
+
+  public String getIdItem() {
+    return idItem;
+  }
+
+  public void setIdItem(String item) {
+    this.idItem = item;
   }
 
 }
