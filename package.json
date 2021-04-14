@@ -1,6 +1,6 @@
 {
     "name": "ar-core-react-native",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "description": "test native module",
     "main": "lib/commonjs/index",
     "module": "lib/module/index",

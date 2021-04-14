@@ -33,8 +33,8 @@ import java.util.concurrent.ExecutionException;
 public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
   @SuppressLint("StaticFieldLeak")
   public ArCoreView arCoreView;
-  public static final int COMMAND_GET_NAME_OBJECT_SELECTED = 1;
-  public static final int COMMAND_DELETE_OBJECT_SELECTED = 2;
+  public static final int CMD_RUN_DELETE_OBJECT = 1;
+  public static final int CMD_RUN_SET_OBJECT = 2;
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public ArCoreModuleViewManager(ReactApplicationContext reactContext) {
@@ -65,10 +65,10 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
   @Override
   public Map<String, Integer> getCommandsMap() {
     return MapBuilder.of(
-      "getNameObjectSelected",
-      COMMAND_GET_NAME_OBJECT_SELECTED,
-      "deleteObjectSelected",
-      COMMAND_DELETE_OBJECT_SELECTED
+      "CMD_RUN_DELETE_OBJECT",
+      CMD_RUN_DELETE_OBJECT,
+      "CMD_RUN_SET_OBJECT",
+      CMD_RUN_SET_OBJECT
     );
   }
 
@@ -87,30 +87,29 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
     arCoreView.setObject(objectName);
   }
 
-  @ReactProp(name = "idObject")
-  public void setNameObject(ArCoreView arCoreView, String idObject) {
-
-  }
-
+  @RequiresApi(api = Build.VERSION_CODES.N)
   @Override
   public void receiveCommand(@NonNull ArCoreView root, String commandId, @Nullable ReadableArray args) {
     super.receiveCommand(root, commandId, args);
     switch (commandId) {
-      case "getNameObjectSelected":
-        String idName = root.getIdItem();
-
+      case "CMD_RUN_DELETE_OBJECT":
+        root.deleteNodeObject();
         break;
-      case "deleteObjectSelected":
+      case "CMD_RUN_CLEAN_OBJECT":
+        assert args != null;
+        Log.e("ARGS", args.getString(0));
+        break;
+      case "CMD_RUN_SET_OBJECT":
+        assert args != null;
+        String idProduct = args.getString(0);
+        String pathFile = args.getString(1);
+        root.setIdItem(idProduct);
+        root.setObject(pathFile);
         break;
       default:
         break;
     }
 
-  }
-
-  @ReactProp(name = "delete")
-  public void deleteObject(ArCoreView arCoreView, boolean delete) {
-    arCoreView.deleteNodeObject(delete);
   }
 
 }

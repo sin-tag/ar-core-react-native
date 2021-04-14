@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -38,9 +37,7 @@ public class ArCoreView extends FrameLayout {
   private ModelRenderable objectRender;
   private Float SCALE = 0.1f;
   private AnchorNode anchorNodeDelete;
-  private AnchorNode anchorNodeSelected;
   private String idItem;
-  private LinearLayout gestureLayout;
 
   public static void setContext(ReactActivity context) {
     reactActivity = context;
@@ -76,13 +73,12 @@ public class ArCoreView extends FrameLayout {
       object.setLocalScale(new Vector3(0.5f, 0.5f, 0.5f));
       object.getRotationController().setEnabled(true);
       object.getScaleController().setEnabled(true);
-      anchorNodeSelected = anchorNode;
       object.setOnTouchListener(new Node.OnTouchListener() {
         @Override
         public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
           anchorNodeDelete = anchorNode;
           WritableMap map = Arguments.createMap();
-          map.putString("ID", "Name");
+          map.putString("IdProduct", getIdItem());
           ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
           return true;
         }
@@ -111,7 +107,8 @@ public class ArCoreView extends FrameLayout {
           loadComplete.set(false);
           return null;
         });
-    setIdItem(uriString.split("/")[uriString.split("/").length - 1]);
+    Toast.makeText(reactActivity, "Select object complete", Toast.LENGTH_LONG);
+    Log.d("CMD_RUN_SET_OBJECT", "Load object complete");
     return loadComplete.get();
   }
 
@@ -119,7 +116,7 @@ public class ArCoreView extends FrameLayout {
   public void calcDistanceToObject() {
     Frame frame = arFragment.getArSceneView().getArFrame();
     Pose camera = frame.getCamera().getPose();
-    Vector3 objectMatrix = anchorNodeSelected.getWorldPosition();
+    Vector3 objectMatrix = anchorNodeDelete.getWorldPosition();
     Double distance = calculateDistance(objectMatrix, camera);
 
   }
@@ -136,15 +133,15 @@ public class ArCoreView extends FrameLayout {
     return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
   }
 
-  public void deleteNodeObject(Boolean delete) {
-    if (delete) {
-      arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
-      anchorNodeDelete.getAnchor().detach();
-      anchorNodeDelete.setParent(null);
-      anchorNodeDelete = null;
-    } else {
+  public void deleteNodeObject() {
+    if (anchorNodeDelete == null) {
 
     }
+    arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
+    anchorNodeDelete.getAnchor().detach();
+    anchorNodeDelete.setParent(null);
+    anchorNodeDelete = null;
+    Log.d("CMD_DELETE_OBJECT", "Delete object complete!");
 
   }
 
