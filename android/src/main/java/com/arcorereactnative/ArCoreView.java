@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 
 import com.facebook.react.ReactActivity;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Frame;
@@ -65,7 +67,7 @@ public class ArCoreView extends FrameLayout {
       Anchor anchor = hitResult.createAnchor();
       AnchorNode anchorNode = new AnchorNode(anchor);
       anchorNode.setParent(arFragment.getArSceneView().getScene());
-      anchorNode.setName(nameItem);
+      anchorNode.setName(idItem);
       // add
       TransformableNode object = new TransformableNode(arFragment.getTransformationSystem());
       object.setParent(anchorNode);
@@ -79,6 +81,9 @@ public class ArCoreView extends FrameLayout {
         @Override
         public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
           anchorNodeDelete = anchorNode;
+          WritableMap map = Arguments.createMap();
+          map.putString("ID", "Name");
+          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
           return true;
         }
       });
@@ -106,6 +111,7 @@ public class ArCoreView extends FrameLayout {
           loadComplete.set(false);
           return null;
         });
+    setIdItem(uriString.split("/")[uriString.split("/").length - 1]);
     return loadComplete.get();
   }
 
