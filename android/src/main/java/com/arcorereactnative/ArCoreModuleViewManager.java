@@ -98,6 +98,7 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
       case "CMD_RUN_CLEAN_OBJECT":
         assert args != null;
         Log.e("ARGS", args.getString(0));
+        Log.e("ARGS", args.getString(1));
         break;
       case "CMD_RUN_SET_OBJECT":
         assert args != null;

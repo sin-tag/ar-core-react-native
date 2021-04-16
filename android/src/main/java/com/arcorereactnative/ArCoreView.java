@@ -23,9 +23,11 @@ import com.google.ar.sceneform.HitTestResult;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.Texture;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.File;
 
@@ -156,6 +158,10 @@ public class ArCoreView extends FrameLayout {
 
   public void setIdItem(String item) {
     this.idItem = item;
+  }
+  public CompletableFuture<Texture> createTexture(String nameFile){
+    return null;
+
   }
 
 }
