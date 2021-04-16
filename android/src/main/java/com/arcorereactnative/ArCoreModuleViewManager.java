@@ -107,6 +107,13 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
         root.setIdItem(idProduct);
         root.setObject(pathFile);
         break;
+      case "CMD_RUN_SET_DUPLICATE":
+        assert args != null;
+        boolean value = args.getBoolean(0);
+        if (value) {
+          root.setMultiObject();
+        }
+
       default:
         break;
     }

@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -38,6 +39,7 @@ public class ArCoreView extends FrameLayout {
   private ArFragment arFragment;
   private ModelRenderable objectRender;
   private Float SCALE = 0.1f;
+  private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
   private String idItem;
 
@@ -63,6 +65,10 @@ public class ArCoreView extends FrameLayout {
         Log.e("LOAD_OBJECT", "Can't not find from cache");
         return;
       }
+      if (!multiObject) {
+        Log.e("LOAD_OBJECT", "Block event add object");
+        return;
+      }
       Anchor anchor = hitResult.createAnchor();
       AnchorNode anchorNode = new AnchorNode(anchor);
       anchorNode.setParent(arFragment.getArSceneView().getScene());
@@ -85,6 +91,7 @@ public class ArCoreView extends FrameLayout {
           return true;
         }
       });
+      multiObject = false;
     });
   }
 
@@ -111,6 +118,7 @@ public class ArCoreView extends FrameLayout {
         });
     Toast.makeText(reactActivity, "Select object complete", Toast.LENGTH_LONG);
     Log.d("CMD_RUN_SET_OBJECT", "Load object complete");
+    multiObject = true;
     return loadComplete.get();
   }
 
@@ -159,9 +167,25 @@ public class ArCoreView extends FrameLayout {
   public void setIdItem(String item) {
     this.idItem = item;
   }
-  public CompletableFuture<Texture> createTexture(String nameFile){
-    return null;
 
+  public void setMultiObject() {
+    multiObject = true;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.N)
+  public CompletableFuture<Texture> createTexture(String nameFile, Texture.Usage usage) {
+    return Texture.builder().setSource(reactActivity, Uri.fromFile(new File(nameFile)))
+      .setUsage(usage)
+      .setSampler(
+        Texture.Sampler.builder()
+          .setMagFilter(Texture.Sampler.MagFilter.LINEAR)
+          .setMinFilter(Texture.Sampler.MinFilter.LINEAR_MIPMAP_LINEAR)
+          .build()
+      ).build()
+      .exceptionally(ex -> {
+        Log.e("Load_Texture", "Unable to load texture from " + nameFile, ex);
+        return null;
+      });
   }
 
 }
