@@ -1,7 +1,7 @@
 {
     "name": "ar-core-react-native",
-    "version": "1.0.8",
-    "description": "test native module",
+    "version": "1.0.9",
+    "description": "ARCore for Rect Native",
     "main": "lib/commonjs/index",
     "module": "lib/module/index",
     "types": "lib/typescript/index.d.ts",

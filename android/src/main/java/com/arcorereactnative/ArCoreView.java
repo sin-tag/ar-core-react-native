@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -23,30 +22,28 @@ import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.HitTestResult;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.math.Vector3;
+import com.google.ar.sceneform.rendering.Material;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.Texture;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.File;
 
 public class ArCoreView extends FrameLayout {
-  public static ReactActivity reactActivity = null;
+  public ReactActivity reactActivity = null;
   private ThemedReactContext context;
-
+  private Material material;
   private ArFragment arFragment;
   private ModelRenderable objectRender;
   private Float SCALE = 0.1f;
   private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
   private String idItem;
-
-  public static void setContext(ReactActivity context) {
-    reactActivity = context;
-  }
-
   @RequiresApi(api = Build.VERSION_CODES.N)
   public ArCoreView(ThemedReactContext context) {
     super(context);
@@ -58,7 +55,9 @@ public class ArCoreView extends FrameLayout {
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {
     inflate(reactActivity, R.layout.activity_main, this);
-    arFragment = (ArFragment) reactActivity.getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
+
+    arFragment = (ArFragment) ( (ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
+    assert arFragment != null;
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
       if (objectRender == null) {
         Toast.makeText(reactActivity, "Not found object loader", Toast.LENGTH_LONG);
@@ -155,11 +154,6 @@ public class ArCoreView extends FrameLayout {
 
   }
 
-
-  public static ReactActivity getActivity() {
-    return reactActivity;
-  }
-
   public String getIdItem() {
     return idItem;
   }
@@ -186,6 +180,32 @@ public class ArCoreView extends FrameLayout {
         Log.e("Load_Texture", "Unable to load texture from " + nameFile, ex);
         return null;
       });
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.N)
+  public void setMaterial(String nameFile) throws ExecutionException, InterruptedException {
+    CompletableFuture<Texture> t = createTexture(nameFile, Texture.Usage.COLOR);
+    objectRender.getMaterial().setTexture("baseColor", t.get());
+  }
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    Log.e("REMOVE", "OK");
+//        arFragment.getArSceneView().getSession().pause();
+//        arFragment.getArSceneView().getSession().close();
+    ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().beginTransaction().remove(arFragment).commit();
+    Thread thread = new Thread() {
+      @Override
+      public void run() {
+        try {
+          Objects.requireNonNull(arFragment.getArSceneView().getSession()).close();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+    };
+
+    thread.start();
   }
 
 }

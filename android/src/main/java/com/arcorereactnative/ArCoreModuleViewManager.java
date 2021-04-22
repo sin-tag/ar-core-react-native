@@ -1,10 +1,7 @@
 package com.arcorereactnative;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Environment;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -17,15 +14,6 @@ import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -113,11 +101,21 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
         if (value) {
           root.setMultiObject();
         }
-
+        break;
+      case "CMD_RUN_SET_TEXTURE":
+        assert args != null;
+        String filePath = args.getString(0);
+        try {
+          root.setMaterial(filePath);
+        } catch (ExecutionException e) {
+          e.printStackTrace();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        break;
       default:
         break;
     }
-
   }
 
 }
