@@ -14,6 +14,7 @@ import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
+
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -94,6 +95,10 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
         String pathFile = args.getString(1);
         root.setIdItem(idProduct);
         root.setObject(pathFile);
+        break;
+      case "CMD_RUN_SCREEN_SHORT":
+        assert args != null;
+        root.screenShort();
         break;
       case "CMD_RUN_SET_DUPLICATE":
         assert args != null;

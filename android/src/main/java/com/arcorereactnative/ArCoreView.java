@@ -4,11 +4,13 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -25,13 +27,15 @@ import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.HitTestResult;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.math.Vector3;
-import com.google.ar.sceneform.rendering.Material;
 import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.Renderable;
 import com.google.ar.sceneform.rendering.Texture;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.io.FileOutputStream;
 import java.lang.ref.WeakReference;
+import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,7 +46,7 @@ public class ArCoreView extends FrameLayout {
   public ReactActivity reactActivity = null;
   private ThemedReactContext context;
   private ArFragment arFragment;
-  private ModelRenderable objectRender;
+  private Renderable objectRender;
   private Float SCALE = 0.1f;
   private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
@@ -110,23 +114,25 @@ public class ArCoreView extends FrameLayout {
     AtomicBoolean loadComplete = new AtomicBoolean(true);
     WeakReference<ArCoreView> weakActivity = new WeakReference<>(this);
     Uri uri = Uri.fromFile(new File(uriString));
+    Log.e("PATH_FILE", uri.toString());
     ModelRenderable.builder()
       .setSource(reactActivity, uri)
       .setIsFilamentGltf(true)
       .build()
-      .thenAccept(modelRenderable -> {
-        ArCoreView activity = weakActivity.get();
-        if (activity != null) {
-          activity.objectRender = modelRenderable;
-        }
-      })
+      .thenAccept(
+        modelRenderable -> {
+          ArCoreView activity = weakActivity.get();
+          if (activity != null) {
+            activity.objectRender = modelRenderable;
+          }
+        })
       .exceptionally(
         throwable -> {
           Toast toast =
-            Toast.makeText(reactActivity, "Cant't load object, because:" + throwable.toString(), Toast.LENGTH_LONG);
+            Toast.makeText(reactActivity, "Unable to load Tiger renderable", Toast.LENGTH_LONG);
           toast.setGravity(Gravity.CENTER, 0, 0);
           toast.show();
-          loadComplete.set(false);
+          Log.e("Load", "Load obj");
           return null;
         });
     Toast.makeText(reactActivity, "Select object complete", Toast.LENGTH_LONG);
@@ -260,5 +266,33 @@ public class ArCoreView extends FrameLayout {
       return false;
     }
     return true;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.N)
+  public void screenShort() {
+    try {
+      Date now = new Date();
+      android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
+      View v1 = reactActivity.getWindow().getDecorView().getRootView();
+      v1.setDrawingCacheEnabled(true);
+      Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
+      v1.setDrawingCacheEnabled(false);
+
+      File imageFile = new File(reactActivity.getDataDir().toString() + "/" + now + ".jpg");
+
+      FileOutputStream outputStream = new FileOutputStream(imageFile);
+      int quality = 100;
+      bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
+      outputStream.flush();
+      outputStream.close();
+      WritableMap map = Arguments.createMap();
+      map.putString("pathFile", imageFile.getPath());
+      ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
+    } catch (Exception e) {
+      WritableMap map = Arguments.createMap();
+      map.putString("pathFile", "");
+      ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
+    }
+
   }
 }
