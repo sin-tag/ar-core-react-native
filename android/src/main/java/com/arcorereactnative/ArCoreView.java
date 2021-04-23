@@ -1,6 +1,9 @@
 package com.arcorereactnative;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -28,6 +31,7 @@ import com.google.ar.sceneform.rendering.Texture;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
+import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +41,6 @@ import java.io.File;
 public class ArCoreView extends FrameLayout {
   public ReactActivity reactActivity = null;
   private ThemedReactContext context;
-  private Material material;
   private ArFragment arFragment;
   private ModelRenderable objectRender;
   private Float SCALE = 0.1f;
@@ -49,6 +52,7 @@ public class ArCoreView extends FrameLayout {
   public ArCoreView(ThemedReactContext context) {
     super(context);
     this.context = context;
+    this.reactActivity = (ReactActivity) context.getCurrentActivity();
     init();
   }
 
@@ -56,7 +60,9 @@ public class ArCoreView extends FrameLayout {
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {
     inflate(reactActivity, R.layout.activity_main, this);
-
+    if (!checkIsSupportedDeviceOrFinish(reactActivity)) {
+      return;
+    }
     arFragment = (ArFragment) ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
     assert arFragment != null;
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
@@ -102,12 +108,18 @@ public class ArCoreView extends FrameLayout {
   @RequiresApi(api = Build.VERSION_CODES.N)
   public boolean setObject(String uriString) {
     AtomicBoolean loadComplete = new AtomicBoolean(true);
+    WeakReference<ArCoreView> weakActivity = new WeakReference<>(this);
     Uri uri = Uri.fromFile(new File(uriString));
     ModelRenderable.builder()
       .setSource(reactActivity, uri)
       .setIsFilamentGltf(true)
       .build()
-      .thenAccept(modelRenderable -> objectRender = modelRenderable)
+      .thenAccept(modelRenderable -> {
+        ArCoreView activity = weakActivity.get();
+        if (activity != null) {
+          activity.objectRender = modelRenderable;
+        }
+      })
       .exceptionally(
         throwable -> {
           Toast toast =
@@ -194,21 +206,59 @@ public class ArCoreView extends FrameLayout {
   protected void onDetachedFromWindow() {
     super.onDetachedFromWindow();
     Log.e("REMOVE", "OK");
-//        arFragment.getArSceneView().getSession().pause();
-//        arFragment.getArSceneView().getSession().close();
     ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().beginTransaction().remove(arFragment).commit();
+    Thread threadPause = new Thread() {
+      @Override
+      public void run() {
+        try {
+          sleep(100);
+          System.gc();
+          Objects.requireNonNull(arFragment.getArSceneView().getSession()).pause();
+          System.gc();
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+          System.gc();
+        }
+      }
+    };
     Thread thread = new Thread() {
       @Override
       public void run() {
         try {
+          threadPause.start();
+          sleep(100);
+          System.gc();
           Objects.requireNonNull(arFragment.getArSceneView().getSession()).close();
+          System.gc();
         } catch (Exception e) {
           e.printStackTrace();
+        } finally {
+          System.gc();
         }
       }
     };
-
     thread.start();
   }
 
+  public static boolean checkIsSupportedDeviceOrFinish(final Activity activity) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      Log.e("ArCoreView", "Sceneform requires Android N or later");
+      Toast.makeText(activity, "Sceneform requires Android N or later", Toast.LENGTH_LONG).show();
+      activity.finish();
+      return false;
+    }
+    String openGlVersionString =
+      ((ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE))
+        .getDeviceConfigurationInfo()
+        .getGlEsVersion();
+    if (Double.parseDouble(openGlVersionString) < 3.0) {
+      Log.e("ArCoreView", "Sceneform requires OpenGL ES 3.0 later");
+      Toast.makeText(activity, "Sceneform requires OpenGL ES 3.0 or later", Toast.LENGTH_LONG)
+        .show();
+      activity.finish();
+      return false;
+    }
+    return true;
+  }
 }
