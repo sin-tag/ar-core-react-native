@@ -1,6 +1,6 @@
 {
     "name": "ar-core-react-native",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "description": "ARCore for Rect Native",
     "main": "lib/commonjs/index",
     "module": "lib/module/index",

@@ -59,10 +59,10 @@ public class ArCoreView extends FrameLayout {
   @SuppressLint("ShowToast")
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {
-    inflate(reactActivity, R.layout.activity_main, this);
     if (!checkIsSupportedDeviceOrFinish(reactActivity)) {
       return;
     }
+    inflate(reactActivity, R.layout.activity_main, this);
     arFragment = (ArFragment) ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
     assert arFragment != null;
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {

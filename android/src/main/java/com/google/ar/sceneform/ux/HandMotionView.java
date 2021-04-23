@@ -22,6 +22,8 @@ import android.widget.FrameLayout;
 
 import androidx.appcompat.widget.AppCompatImageView;
 
+import com.arcorereactnative.R;
+
 
 /** This view contains the hand motion instructions with animation. */
 
