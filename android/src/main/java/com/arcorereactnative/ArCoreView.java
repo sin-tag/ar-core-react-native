@@ -44,6 +44,7 @@ public class ArCoreView extends FrameLayout {
   private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
   private String idItem;
+
   @RequiresApi(api = Build.VERSION_CODES.N)
   public ArCoreView(ThemedReactContext context) {
     super(context);
@@ -56,7 +57,7 @@ public class ArCoreView extends FrameLayout {
   public void init() {
     inflate(reactActivity, R.layout.activity_main, this);
 
-    arFragment = (ArFragment) ( (ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
+    arFragment = (ArFragment) ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
     assert arFragment != null;
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
       if (objectRender == null) {
@@ -104,6 +105,7 @@ public class ArCoreView extends FrameLayout {
     Uri uri = Uri.fromFile(new File(uriString));
     ModelRenderable.builder()
       .setSource(reactActivity, uri)
+      .setIsFilamentGltf(true)
       .build()
       .thenAccept(modelRenderable -> objectRender = modelRenderable)
       .exceptionally(
@@ -187,6 +189,7 @@ public class ArCoreView extends FrameLayout {
     CompletableFuture<Texture> t = createTexture(nameFile, Texture.Usage.COLOR);
     objectRender.getMaterial().setTexture("baseColor", t.get());
   }
+
   @Override
   protected void onDetachedFromWindow() {
     super.onDetachedFromWindow();
