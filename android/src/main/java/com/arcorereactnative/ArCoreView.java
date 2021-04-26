@@ -50,7 +50,7 @@ public class ArCoreView extends FrameLayout {
   private Float SCALE = 0.1f;
   private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
-  private String idItem;
+  private String idItem = "";
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public ArCoreView(ThemedReactContext context) {
@@ -89,20 +89,31 @@ public class ArCoreView extends FrameLayout {
       object.setRenderable(objectRender);
       object.select();
       object.setLocalScale(new Vector3(0.5f, 0.5f, 0.5f));
-      object.getRotationController().setEnabled(true);
-      object.getScaleController().setEnabled(true);
+      object.getRotationController().setEnabled(false);
+      object.getScaleController().setEnabled(false);
+//      object.setOnTapListener(new Node.OnTapListener() {
+//        @Override
+//        public void onTap(HitTestResult hitTestResult, MotionEvent motionEvent) {
+//          WritableMap map = Arguments.createMap();
+//          map.putString("IdProduct", getIdItem());
+//          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+//        }
+//      });
       object.setOnTouchListener(new Node.OnTouchListener() {
         @Override
         public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
           anchorNodeDelete = anchorNode;
-          WritableMap map = Arguments.createMap();
-          map.putString("IdProduct", getIdItem());
-          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
           return true;
         }
       });
       multiObject = false;
     });
+  }
+
+  public void getNameWithEmitter() {
+    WritableMap map = Arguments.createMap();
+    map.putString("IdProduct", getIdItem());
+    ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
   }
 
   public void setSCALE(Float SCALE) {
@@ -162,15 +173,19 @@ public class ArCoreView extends FrameLayout {
     return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
   }
 
+  @SuppressLint("ShowToast")
   public void deleteNodeObject() {
     if (anchorNodeDelete == null) {
-
+      Toast.makeText(reactActivity, "Can't choose object", Toast.LENGTH_LONG);
+    } else {
+      arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
+      anchorNodeDelete.getAnchor().detach();
+      anchorNodeDelete.setParent(null);
+      anchorNodeDelete = null;
+      idItem = "";
+      Log.d("CMD_DELETE_OBJECT", "Delete object complete!");
     }
-    arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
-    anchorNodeDelete.getAnchor().detach();
-    anchorNodeDelete.setParent(null);
-    anchorNodeDelete = null;
-    Log.d("CMD_DELETE_OBJECT", "Delete object complete!");
+
 
   }
 

@@ -100,6 +100,10 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
         assert args != null;
         root.screenShort();
         break;
+      case "CMD_RUN_GET_ID":
+        assert args != null;
+        root.getNameWithEmitter();
+        break;
       case "CMD_RUN_SET_DUPLICATE":
         assert args != null;
         boolean value = args.getBoolean(0);
