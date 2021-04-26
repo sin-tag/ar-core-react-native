@@ -91,14 +91,14 @@ public class ArCoreView extends FrameLayout {
       object.setLocalScale(new Vector3(0.5f, 0.5f, 0.5f));
       object.getRotationController().setEnabled(false);
       object.getScaleController().setEnabled(false);
-//      object.setOnTapListener(new Node.OnTapListener() {
-//        @Override
-//        public void onTap(HitTestResult hitTestResult, MotionEvent motionEvent) {
-//          WritableMap map = Arguments.createMap();
-//          map.putString("IdProduct", getIdItem());
-//          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
-//        }
-//      });
+      object.setOnTapListener(new Node.OnTapListener() {
+        @Override
+        public void onTap(HitTestResult hitTestResult, MotionEvent motionEvent) {
+          WritableMap map = Arguments.createMap();
+          map.putString("IdProduct", getIdItem());
+          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+        }
+      });
       object.setOnTouchListener(new Node.OnTouchListener() {
         @Override
         public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
