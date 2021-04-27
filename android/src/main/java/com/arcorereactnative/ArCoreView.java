@@ -233,13 +233,9 @@ public class ArCoreView extends FrameLayout {
       public void run() {
         try {
           sleep(100);
-          System.gc();
           Objects.requireNonNull(arFragment.getArSceneView().getSession()).pause();
-          System.gc();
         } catch (Exception e) {
           e.printStackTrace();
-        } finally {
-          System.gc();
         }
       }
     };
@@ -249,9 +245,7 @@ public class ArCoreView extends FrameLayout {
         try {
           threadPause.start();
           sleep(100);
-          System.gc();
           Objects.requireNonNull(arFragment.getArSceneView().getSession()).close();
-          System.gc();
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
