@@ -111,17 +111,6 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
           root.setMultiObject();
         }
         break;
-      case "CMD_RUN_SET_TEXTURE":
-        assert args != null;
-        String filePath = args.getString(0);
-        try {
-          root.setMaterial(filePath);
-        } catch (ExecutionException e) {
-          e.printStackTrace();
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        break;
       default:
         break;
     }

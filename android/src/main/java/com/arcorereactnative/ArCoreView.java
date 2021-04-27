@@ -7,9 +7,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.PixelCopy;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
@@ -24,8 +28,10 @@ import com.google.ar.core.Anchor;
 import com.google.ar.core.Frame;
 import com.google.ar.core.Pose;
 import com.google.ar.sceneform.AnchorNode;
+import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.HitTestResult;
 import com.google.ar.sceneform.Node;
+import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.Renderable;
@@ -34,7 +40,10 @@ import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -51,6 +60,7 @@ public class ArCoreView extends FrameLayout {
   private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
   private String idItem = "";
+  private boolean returnID = false;
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public ArCoreView(ThemedReactContext context) {
@@ -83,6 +93,7 @@ public class ArCoreView extends FrameLayout {
       AnchorNode anchorNode = new AnchorNode(anchor);
       anchorNode.setParent(arFragment.getArSceneView().getScene());
       anchorNode.setName(idItem);
+
       // add
       TransformableNode object = new TransformableNode(arFragment.getTransformationSystem());
       object.setParent(anchorNode);
@@ -91,22 +102,49 @@ public class ArCoreView extends FrameLayout {
       object.setLocalScale(new Vector3(0.5f, 0.5f, 0.5f));
       object.getRotationController().setEnabled(false);
       object.getScaleController().setEnabled(false);
-      object.setOnTapListener(new Node.OnTapListener() {
-        @Override
-        public void onTap(HitTestResult hitTestResult, MotionEvent motionEvent) {
-          WritableMap map = Arguments.createMap();
-          map.putString("IdProduct", getIdItem());
-          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
-        }
-      });
+      object.getRotationController().setEnabled(true);
+      object.getScaleController().setEnabled(false);
       object.setOnTouchListener(new Node.OnTouchListener() {
         @Override
         public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
-          anchorNodeDelete = anchorNode;
+
+          if (anchorNodeDelete != null && anchorNodeDelete.getName().equalsIgnoreCase(anchorNode.getName())) {
+            if (returnID) {
+              anchorNodeDelete = anchorNode;
+              WritableMap map = Arguments.createMap();
+              map.putString("ID", anchorNodeDelete.getName());
+              map.putString("SELECTED", "TRUE");
+              ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+
+              returnID = false;
+            }
+          } else {
+            anchorNodeDelete = anchorNode;
+            WritableMap map = Arguments.createMap();
+            map.putString("ID", anchorNodeDelete.getName());
+            map.putString("SELECTED", "TRUE");
+            ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+            returnID = false;
+          }
           return true;
         }
       });
       multiObject = false;
+    });
+    arFragment.getArSceneView().getScene().setOnTouchListener(new Scene.OnTouchListener() {
+      @Override
+      public boolean onSceneTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
+        if (anchorNodeDelete == null) {
+          returnID = true;
+        } else {
+          WritableMap map = Arguments.createMap();
+          map.putString("ID", "");
+          map.putString("SELECTED", "FALSE");
+          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+          anchorNodeDelete = null;
+        }
+        return true;
+      }
     });
   }
 
@@ -148,7 +186,7 @@ public class ArCoreView extends FrameLayout {
         });
     Toast.makeText(reactActivity, "Select object complete", Toast.LENGTH_LONG);
     Log.d("CMD_RUN_SET_OBJECT", "Load object complete");
-    multiObject = true;
+    multiObject = false;
     return loadComplete.get();
   }
 
@@ -199,28 +237,6 @@ public class ArCoreView extends FrameLayout {
 
   public void setMultiObject() {
     multiObject = true;
-  }
-
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  public CompletableFuture<Texture> createTexture(String nameFile, Texture.Usage usage) {
-    return Texture.builder().setSource(reactActivity, Uri.fromFile(new File(nameFile)))
-      .setUsage(usage)
-      .setSampler(
-        Texture.Sampler.builder()
-          .setMagFilter(Texture.Sampler.MagFilter.LINEAR)
-          .setMinFilter(Texture.Sampler.MinFilter.LINEAR_MIPMAP_LINEAR)
-          .build()
-      ).build()
-      .exceptionally(ex -> {
-        Log.e("Load_Texture", "Unable to load texture from " + nameFile, ex);
-        return null;
-      });
-  }
-
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  public void setMaterial(String nameFile) throws ExecutionException, InterruptedException {
-    CompletableFuture<Texture> t = createTexture(nameFile, Texture.Usage.COLOR);
-    objectRender.getMaterial().setTexture("baseColor", t.get());
   }
 
   @Override
@@ -279,29 +295,51 @@ public class ArCoreView extends FrameLayout {
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void screenShort() {
-    try {
-      Date now = new Date();
-      android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
-      View v1 = reactActivity.getWindow().getDecorView().getRootView();
-      v1.setDrawingCacheEnabled(true);
-      Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
-      v1.setDrawingCacheEnabled(false);
+    ArSceneView view = arFragment.getArSceneView();
 
-      File imageFile = new File(reactActivity.getDataDir().toString() + "/" + now + ".jpg");
+    // Create a bitmap the size of the scene view.
+    final Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
+      Bitmap.Config.ARGB_8888);
 
-      FileOutputStream outputStream = new FileOutputStream(imageFile);
-      int quality = 100;
-      bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
-      outputStream.flush();
-      outputStream.close();
-      WritableMap map = Arguments.createMap();
-      map.putString("pathFile", imageFile.getPath());
-      ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
-    } catch (Exception e) {
-      WritableMap map = Arguments.createMap();
-      map.putString("pathFile", "");
-      ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
-    }
+    // Create a handler thread to offload the processing of the image.
+    final HandlerThread handlerThread = new HandlerThread("PixelCopier");
+    handlerThread.start();
+    // Make the request to copy.
+    PixelCopy.request(view, bitmap, (copyResult) -> {
+      if (copyResult == PixelCopy.SUCCESS) {
+        try {
+          saveBitmapToDisk(bitmap);
+        } catch (IOException e) {
+          Toast toast = Toast.makeText(reactActivity, e.toString(),
+            Toast.LENGTH_LONG);
+          toast.show();
+          WritableMap map = Arguments.createMap();
+          map.putString("pathFile", "");
+          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
+          return;
+        }
+      } else {
+      }
+      handlerThread.quitSafely();
+    }, new Handler(handlerThread.getLooper()));
+  }
 
+
+  public void saveBitmapToDisk(Bitmap bitmap) throws IOException {
+    File imageScreen = new File(
+      Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString());
+    Calendar c = Calendar.getInstance();
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
+    String formattedDate = df.format(c.getTime());
+
+    File mediaFile = new File(imageScreen, "FieldVisualizer"+formattedDate+".jpeg");
+
+    FileOutputStream fileOutputStream = new FileOutputStream(mediaFile);
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fileOutputStream);
+    fileOutputStream.flush();
+    fileOutputStream.close();
+    WritableMap map = Arguments.createMap();
+    map.putString("PATH_FILE", mediaFile.getPath());
+    ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
   }
 }
