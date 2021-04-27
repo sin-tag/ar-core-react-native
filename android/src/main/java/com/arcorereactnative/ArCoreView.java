@@ -186,7 +186,7 @@ public class ArCoreView extends FrameLayout {
         });
     Toast.makeText(reactActivity, "Select object complete", Toast.LENGTH_LONG);
     Log.d("CMD_RUN_SET_OBJECT", "Load object complete");
-    multiObject = false;
+    multiObject = true;
     return loadComplete.get();
   }
 
