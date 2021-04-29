@@ -106,10 +106,10 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
         break;
       case "CMD_RUN_SET_DUPLICATE":
         assert args != null;
-        boolean value = args.getBoolean(0);
-        if (value) {
-          root.setMultiObject();
-        }
+        root.setMultiObject();
+        break;
+      case "CMD_RUN_KILL_PROCESS":
+        root.killProcess();
         break;
       default:
         break;

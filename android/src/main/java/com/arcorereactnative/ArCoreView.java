@@ -77,7 +77,7 @@ public class ArCoreView extends FrameLayout {
       return;
     }
     inflate(reactActivity, R.layout.activity_main, this);
-    arFragment = (ArFragment) ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
+    arFragment = (ArFragment) reactActivity.getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
     assert arFragment != null;
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
       if (objectRender == null) {
@@ -239,11 +239,47 @@ public class ArCoreView extends FrameLayout {
     multiObject = true;
   }
 
+  public void killProcess() {
+    try {
+      reactActivity.getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
+
+      Thread threadPause = new Thread() {
+        @Override
+        public void run() {
+          try {
+            sleep(100);
+            Objects.requireNonNull(arFragment.getArSceneView().getSession()).pause();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        }
+      };
+      Thread thread = new Thread() {
+        @Override
+        public void run() {
+          try {
+            threadPause.start();
+            sleep(100);
+            Objects.requireNonNull(arFragment.getArSceneView().getSession()).close();
+          } catch (Exception e) {
+            e.printStackTrace();
+          } finally {
+            System.gc();
+          }
+        }
+      };
+      thread.start();
+    } catch (Exception e) {
+      System.out.println(e.toString());
+    }
+
+  }
+
   @Override
   protected void onDetachedFromWindow() {
     super.onDetachedFromWindow();
     Log.e("REMOVE", "OK");
-    ((ReactActivity) Objects.requireNonNull(context.getCurrentActivity())).getSupportFragmentManager().beginTransaction().remove(arFragment).commit();
+    reactActivity.getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
     Thread threadPause = new Thread() {
       @Override
       public void run() {
@@ -329,10 +365,10 @@ public class ArCoreView extends FrameLayout {
     File imageScreen = new File(
       Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString());
     Calendar c = Calendar.getInstance();
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
+    SimpleDateFormat df = new SimpleDateFormat("HH.mm.ss dd-MM-yyyy");
     String formattedDate = df.format(c.getTime());
 
-    File mediaFile = new File(imageScreen, "FieldVisualizer"+formattedDate+".jpeg");
+    File mediaFile = new File(imageScreen, "AVRScreenShort" + formattedDate + ".jpeg");
 
     FileOutputStream fileOutputStream = new FileOutputStream(mediaFile);
     bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fileOutputStream);
