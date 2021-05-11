@@ -1,21 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.arcorereactnative">
+    package="com.arcorereactnative">
 
-  <uses-permission android:name="android.permission.CAMERA" />
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-  <uses-feature
-    android:name="android.hardware.camera.ar"
-    android:required="true" />
-  <uses-feature
-    android:glEsVersion="0x00020000"
-    android:required="true" />
+    <uses-feature
+        android:name="android.hardware.camera.ar"
+        android:required="true" />
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
+    <uses-feature android:name="com.google.ar.core.depth" />
 
-  <uses-feature android:name="com.google.ar.core.depth" />
+    <application>
+        <activity android:name=".ArCoreViewActive"></activity>
 
-  <application>
-    <meta-data
-      android:name="com.google.ar.core"
-      android:value="optional" />
-  </application>
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="optional" />
+    </application>
+
 </manifest>

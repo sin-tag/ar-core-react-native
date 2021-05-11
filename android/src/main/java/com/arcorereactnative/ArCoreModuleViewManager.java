@@ -1,3 +1,4 @@
+// create by hoangtuyensk@gmail.com - github: sig-tag
 package com.arcorereactnative;
 
 import android.annotation.SuppressLint;
@@ -20,100 +21,83 @@ import java.util.concurrent.ExecutionException;
 
 
 public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
-  @SuppressLint("StaticFieldLeak")
-  public ArCoreView arCoreView;
-  public static final int CMD_RUN_DELETE_OBJECT = 1;
-  public static final int CMD_RUN_SET_OBJECT = 2;
+    @SuppressLint("StaticFieldLeak")
+    public ArCoreView arCoreView;
+    public static final int CMD_RUN_DELETE_OBJECT = 1;
+    public static final int CMD_RUN_SET_OBJECT = 2;
 
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  public ArCoreModuleViewManager(ReactApplicationContext reactContext) {
-    super();
-  }
-
-
-  @NonNull
-  @Override
-  public String getName() {
-    return "arCoreModuleViewManager";
-  }
-
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  @NonNull
-  @Override
-  public ArCoreView createViewInstance(ThemedReactContext reactContext) {
-    arCoreView = new ArCoreView(reactContext);
-    if (arCoreView == null) {
-      Log.e("NULL_arCoreViews", "arCoreViews.toString()");
-    } else {
-      Log.e("NULL_arCoreViews", "Not NULL");
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public ArCoreModuleViewManager(ReactApplicationContext reactContext) {
+        super();
     }
-    return arCoreView;
-  }
 
-  @Nullable
-  @Override
-  public Map<String, Integer> getCommandsMap() {
-    return MapBuilder.of(
-      "CMD_RUN_DELETE_OBJECT",
-      CMD_RUN_DELETE_OBJECT,
-      "CMD_RUN_SET_OBJECT",
-      CMD_RUN_SET_OBJECT
-    );
-  }
 
-  public ArCoreView getArCoreViews(ArCoreView arCoreView) {
-    if (arCoreView == null) {
-      Log.e("NULL_IF", "arCoreViews.toString()");
-    } else {
-      Log.e("NULL_ELSE", arCoreView.toString());
+    @NonNull
+    @Override
+    public String getName() {
+        return "ArCoreReactNativeView";
     }
-    return arCoreView;
-  }
 
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  @ReactProp(name = "objectName")
-  public void setObject(ArCoreView arCoreView, String objectName) {
-    arCoreView.setObject(objectName);
-  }
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @NonNull
+    @Override
+    public ArCoreView createViewInstance(ThemedReactContext reactContext) {
 
-  @RequiresApi(api = Build.VERSION_CODES.N)
-  @Override
-  public void receiveCommand(@NonNull ArCoreView root, String commandId, @Nullable ReadableArray args) {
-    super.receiveCommand(root, commandId, args);
-    switch (commandId) {
-      case "CMD_RUN_DELETE_OBJECT":
-        root.deleteNodeObject();
-        break;
-      case "CMD_RUN_CLEAN_OBJECT":
-        assert args != null;
-        Log.e("ARGS", args.getString(0));
-        Log.e("ARGS", args.getString(1));
-        break;
-      case "CMD_RUN_SET_OBJECT":
-        assert args != null;
-        String idProduct = args.getString(0);
-        String pathFile = args.getString(1);
-        root.setIdItem(idProduct);
-        root.setObject(pathFile);
-        break;
-      case "CMD_RUN_SCREEN_SHORT":
-        assert args != null;
-        root.screenShort();
-        break;
-      case "CMD_RUN_GET_ID":
-        assert args != null;
-        root.getNameWithEmitter();
-        break;
-      case "CMD_RUN_SET_DUPLICATE":
-        assert args != null;
-        root.setMultiObject();
-        break;
-      case "CMD_RUN_KILL_PROCESS":
-        root.killProcess();
-        break;
-      default:
-        break;
+        return new ArCoreView(reactContext);
     }
-  }
+
+    @Nullable
+    @Override
+    public Map<String, Integer> getCommandsMap() {
+        return MapBuilder.of(
+                "CMD_RUN_DELETE_OBJECT",
+                CMD_RUN_DELETE_OBJECT,
+                "CMD_RUN_SET_OBJECT",
+                CMD_RUN_SET_OBJECT
+        );
+    }
+
+    public ArCoreView getArCoreViews(ArCoreView arCoreView) {
+        if (arCoreView == null) {
+            Log.e("NULL_IF", "arCoreViews.toString()");
+        } else {
+            Log.e("NULL_ELSE", arCoreView.toString());
+        }
+        return arCoreView;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @ReactProp(name = "objectName")
+    public void setObject(ArCoreView arCoreView, String objectName) {
+        arCoreView.setObject(objectName);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    @Override
+    public void receiveCommand(@NonNull ArCoreView root, String commandId, @Nullable ReadableArray args) {
+        super.receiveCommand(root, commandId, args);
+        switch (commandId) {
+            case "CMD_RUN_DELETE_OBJECT":
+                root.deleteNodeObject();
+                break;
+            case "CMD_RUN_CLEAN_OBJECT":
+                assert args != null;
+                Log.e("ARGS", args.getString(0));
+                Log.e("ARGS", args.getString(1));
+                break;
+            case "CMD_RUN_SET_OBJECT":
+                assert args != null;
+                String idProduct = args.getString(0);
+                String pathFile = args.getString(1);
+                root.setIdItem(idProduct);
+                root.setObject(pathFile);
+                break;
+            case "CMD_RUN_KILL_PROCESS":
+                root.killProcess();
+                break;
+            default:
+                break;
+        }
+    }
 
 }

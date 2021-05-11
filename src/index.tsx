@@ -1,12 +1,12 @@
 import { requireNativeComponent, ViewStyle } from 'react-native';
 
-type AwesomeModuleProps = {
+type ArCoreReactNativeProps = {
   color: string;
   style: ViewStyle;
 };
 
-export const AwesomeModuleViewManager = requireNativeComponent<AwesomeModuleProps>(
-  'arCoreModuleViewManager'
+export const ArCoreReactNativeViewManager = requireNativeComponent<ArCoreReactNativeProps>(
+  'ArCoreReactNativeView'
 );
 
-export default AwesomeModuleViewManager;
+export default ArCoreReactNativeViewManager;

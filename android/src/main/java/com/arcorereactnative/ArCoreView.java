@@ -1,9 +1,11 @@
+// create by hoangtuyensk@gmail.com - github: sig-tag
 package com.arcorereactnative;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
@@ -19,6 +21,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.bridge.Arguments;
@@ -56,7 +59,6 @@ public class ArCoreView extends FrameLayout {
   private ThemedReactContext context;
   private ArFragment arFragment;
   private Renderable objectRender;
-  private Float SCALE = 0.1f;
   private boolean multiObject = false;
   private AnchorNode anchorNodeDelete;
   private String idItem = "";
@@ -68,16 +70,18 @@ public class ArCoreView extends FrameLayout {
     this.context = context;
     this.reactActivity = (ReactActivity) context.getCurrentActivity();
     init();
+
   }
 
   @SuppressLint("ShowToast")
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void init() {
-    if (!checkIsSupportedDeviceOrFinish(reactActivity)) {
+    if (!checkIsSupportedDeviceOrFinish((AppCompatActivity) context.getCurrentActivity())) {
       return;
     }
-    inflate(reactActivity, R.layout.activity_main, this);
-    arFragment = (ArFragment) reactActivity.getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
+    inflate((AppCompatActivity) context.getCurrentActivity(), R.layout.activity_main, this);
+
+    arFragment = (ArFragment) ((AppCompatActivity) context.getCurrentActivity()).getSupportFragmentManager().findFragmentById(R.id.ui_fragment);
     assert arFragment != null;
     arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
       if (objectRender == null) {
@@ -99,11 +103,9 @@ public class ArCoreView extends FrameLayout {
       object.setParent(anchorNode);
       object.setRenderable(objectRender);
       object.select();
-      object.setLocalScale(new Vector3(0.5f, 0.5f, 0.5f));
-      object.getRotationController().setEnabled(false);
-      object.getScaleController().setEnabled(false);
+      object.setLocalScale(new Vector3(1.0f, 1.0f, 1.0f));
       object.getRotationController().setEnabled(true);
-      object.getScaleController().setEnabled(false);
+      object.getScaleController().setEnabled(true);
       object.setOnTouchListener(new Node.OnTouchListener() {
         @Override
         public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
@@ -121,7 +123,7 @@ public class ArCoreView extends FrameLayout {
           } else {
             anchorNodeDelete = anchorNode;
             WritableMap map = Arguments.createMap();
-            map.putString("ID", anchorNodeDelete.getName());
+            map.putString("ID", "");
             map.putString("SELECTED", "TRUE");
             ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
             returnID = false;
@@ -129,7 +131,7 @@ public class ArCoreView extends FrameLayout {
           return true;
         }
       });
-      multiObject = false;
+      multiObject = true;
     });
     arFragment.getArSceneView().getScene().setOnTouchListener(new Scene.OnTouchListener() {
       @Override
@@ -150,13 +152,10 @@ public class ArCoreView extends FrameLayout {
 
   public void getNameWithEmitter() {
     WritableMap map = Arguments.createMap();
-    map.putString("IdProduct", getIdItem());
+    map.putString("IdProduct", "");
     ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
   }
 
-  public void setSCALE(Float SCALE) {
-    this.SCALE = SCALE;
-  }
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public boolean setObject(String uriString) {
@@ -165,7 +164,7 @@ public class ArCoreView extends FrameLayout {
     Uri uri = Uri.fromFile(new File(uriString));
     Log.e("PATH_FILE", uri.toString());
     ModelRenderable.builder()
-      .setSource(reactActivity, uri)
+      .setSource((AppCompatActivity) context.getCurrentActivity(), uri)
       .setIsFilamentGltf(true)
       .build()
       .thenAccept(
@@ -178,13 +177,13 @@ public class ArCoreView extends FrameLayout {
       .exceptionally(
         throwable -> {
           Toast toast =
-            Toast.makeText(reactActivity, "Unable to load Tiger renderable", Toast.LENGTH_LONG);
+            Toast.makeText((AppCompatActivity) context.getCurrentActivity(), "Unable to load Tiger renderable", Toast.LENGTH_LONG);
           toast.setGravity(Gravity.CENTER, 0, 0);
           toast.show();
           Log.e("Load", "Load obj");
           return null;
         });
-    Toast.makeText(reactActivity, "Select object complete", Toast.LENGTH_LONG);
+    Toast.makeText((AppCompatActivity) context.getCurrentActivity(), "Select object complete", Toast.LENGTH_LONG);
     Log.d("CMD_RUN_SET_OBJECT", "Load object complete");
     multiObject = true;
     return loadComplete.get();
@@ -214,7 +213,7 @@ public class ArCoreView extends FrameLayout {
   @SuppressLint("ShowToast")
   public void deleteNodeObject() {
     if (anchorNodeDelete == null) {
-      Toast.makeText(reactActivity, "Can't choose object", Toast.LENGTH_LONG);
+      Toast.makeText((AppCompatActivity) context.getCurrentActivity(), "Can't choose object", Toast.LENGTH_LONG);
     } else {
       arFragment.getArSceneView().getScene().removeChild(anchorNodeDelete);
       anchorNodeDelete.getAnchor().detach();
@@ -241,8 +240,8 @@ public class ArCoreView extends FrameLayout {
 
   public void killProcess() {
     try {
-      reactActivity.getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
-
+      Log.e("REMOVE_KILL", "RUN START");
+      ((AppCompatActivity) context.getCurrentActivity()).getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
       Thread threadPause = new Thread() {
         @Override
         public void run() {
@@ -255,16 +254,21 @@ public class ArCoreView extends FrameLayout {
         }
       };
       Thread thread = new Thread() {
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void run() {
           try {
             threadPause.start();
             sleep(100);
             Objects.requireNonNull(arFragment.getArSceneView().getSession()).close();
+            ((AppCompatActivity) context.getCurrentActivity()).finish();
           } catch (Exception e) {
             e.printStackTrace();
+          } catch (Throwable throwable) {
+            throwable.printStackTrace();
           } finally {
             System.gc();
+            Log.e("REMOVE_KILL", "END START");
           }
         }
       };
@@ -278,8 +282,8 @@ public class ArCoreView extends FrameLayout {
   @Override
   protected void onDetachedFromWindow() {
     super.onDetachedFromWindow();
-    Log.e("REMOVE", "OK");
-    reactActivity.getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
+    
+    ((AppCompatActivity) context.getCurrentActivity()).getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
     Thread threadPause = new Thread() {
       @Override
       public void run() {
@@ -296,22 +300,23 @@ public class ArCoreView extends FrameLayout {
       public void run() {
         try {
           threadPause.start();
-          sleep(100);
+          sleep(500);
           Objects.requireNonNull(arFragment.getArSceneView().getSession()).close();
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
-          System.gc();
+          Log.e("END_", "Finish");
         }
       }
     };
     thread.start();
+
   }
 
   public static boolean checkIsSupportedDeviceOrFinish(final Activity activity) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      Log.e("ArCoreView", "Sceneform requires Android N or later");
-      Toast.makeText(activity, "Sceneform requires Android N or later", Toast.LENGTH_LONG).show();
+      Log.e("ArCoreView", "ArCore requires Android N or later");
+      Toast.makeText(activity, "ArCore requires Android N or later", Toast.LENGTH_LONG).show();
       activity.finish();
       return false;
     }
@@ -320,8 +325,8 @@ public class ArCoreView extends FrameLayout {
         .getDeviceConfigurationInfo()
         .getGlEsVersion();
     if (Double.parseDouble(openGlVersionString) < 3.0) {
-      Log.e("ArCoreView", "Sceneform requires OpenGL ES 3.0 later");
-      Toast.makeText(activity, "Sceneform requires OpenGL ES 3.0 or later", Toast.LENGTH_LONG)
+      Log.e("ArCoreView", "ArCore requires OpenGL ES 3.0 later");
+      Toast.makeText(activity, "ArCore requires OpenGL ES 3.0 or later", Toast.LENGTH_LONG)
         .show();
       activity.finish();
       return false;
@@ -346,11 +351,11 @@ public class ArCoreView extends FrameLayout {
         try {
           saveBitmapToDisk(bitmap);
         } catch (IOException e) {
-          Toast toast = Toast.makeText(reactActivity, e.toString(),
+          Toast toast = Toast.makeText(((AppCompatActivity) context.getCurrentActivity()), e.toString(),
             Toast.LENGTH_LONG);
           toast.show();
           WritableMap map = Arguments.createMap();
-          map.putString("pathFile", "");
+          map.putString("PATH_FILE", "");
           ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
           return;
         }
@@ -362,8 +367,7 @@ public class ArCoreView extends FrameLayout {
 
 
   public void saveBitmapToDisk(Bitmap bitmap) throws IOException {
-    File imageScreen = new File(
-      Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString());
+    File imageScreen = new File(context.getDir("images", Context.MODE_PRIVATE).toString());
     Calendar c = Calendar.getInstance();
     SimpleDateFormat df = new SimpleDateFormat("HH.mm.ss dd-MM-yyyy");
     String formattedDate = df.format(c.getTime());

@@ -10,7 +10,9 @@ To get started with the project, run `yarn` in the root directory to install the
 yarn
 ```
 
-While developing, you can run the [example app](/example/) to test your changes.
+> While it's possible to use [`npm`](https://github.com/npm/cli), the tooling is built around [`yarn`](https://classic.yarnpkg.com/), so you'll have an easier time if you use `yarn` for development.
+
+While developing, you can run the [example app](/example/) to test your changes. Any changes you make in your library's JavaScript code will be reflected in the example app without a rebuild. If you change any native code, then you'll need to rebuild the example app.
 
 To start the packager:
 
@@ -49,9 +51,9 @@ Remember to add tests for your change if possible. Run the unit tests by:
 yarn test
 ```
 
-To edit the Objective-C files, open `example/ios/AwesomeModuleExample.xcworkspace` in XCode and find the source files at `Pods > Development Pods > react-native-awesome-module`.
+To edit the Objective-C files, open `example/ios/ArCoreReactNativeExample.xcworkspace` in XCode and find the source files at `Pods > Development Pods > ar-core-react-native`.
 
-To edit the Kotlin files, open `example/android` in Android studio and find the source files at `reactnativeawesomemodule` under `Android`.
+To edit the Kotlin files, open `example/android` in Android studio and find the source files at `arcorereactnative` under `Android`.
 
 ### Commit message convention
 
@@ -73,6 +75,16 @@ Our pre-commit hooks verify that your commit message matches this format when co
 We use [TypeScript](https://www.typescriptlang.org/) for type checking, [ESLint](https://eslint.org/) with [Prettier](https://prettier.io/) for linting and formatting the code, and [Jest](https://jestjs.io/) for testing.
 
 Our pre-commit hooks verify that the linter and tests pass when committing.
+
+### Publishing to npm
+
+We use [release-it](https://github.com/release-it/release-it) to make it easier to publish new versions. It handles common tasks like bumping version based on semver, creating tags and releases etc.
+
+To publish new versions, run the following:
+
+```sh
+yarn release
+```
 
 ### Scripts
 

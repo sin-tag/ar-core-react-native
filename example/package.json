@@ -1,6 +1,6 @@
 {
-  "name": "react-native-awesome-module-example",
-  "description": "Example app for react-native-awesome-module",
+  "name": "ar-core-react-native-example",
+  "description": "Example app for ar-core-react-native",
   "version": "0.0.1",
   "private": true,
   "scripts": {

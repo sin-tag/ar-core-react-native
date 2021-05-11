@@ -1,3 +1,4 @@
+// create by hoangtuyensk@gmail.com - github: sig-tag
 package com.arcorereactnative;
 
 import android.os.Build;
