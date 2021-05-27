@@ -1,4 +1,3 @@
-// create by hoangtuyensk@gmail.com - github: sig-tag
 import Foundation
 import SceneKit
 import ARKit
@@ -11,6 +10,7 @@ class VirtualObject: SCNNode {
 	var id: Int!
     var idProduct: String = ""
     var wrapperNode = SCNNode();
+    var node_ = SCNNode();
 
 	var viewController: ArCoreReactNativeView?
 
@@ -26,21 +26,28 @@ class VirtualObject: SCNNode {
 		self.modelName = modelName
         self.idProduct = idProduct
 	}
-    
+
 	required init?(coder aDecoder: NSCoder) {
 		fatalError("init(coder:) has not been implemented")
 	}
     func loadModel() -> Bool {
         print("model name:", self.modelName)
-		guard let virtualObjectScene = SCNScene(named: modelName) else {
+//        guard let url = Bundle.main.url(forResource: modelName, withExtension: "usdz") else { fatalError() }
+		guard let virtualObjectScene = try? SCNScene(url: URL(fileURLWithPath: modelName), options: [.checkConsistency: true]) else{
 			print("")
             return false
 		}
-
+//        guard let virtualObjectScene = try? SCNScene(named: "cherub.dae") else{
+//            print("")
+//            return false
+//        }
 		for child in virtualObjectScene.rootNode.childNodes {
 			child.geometry?.firstMaterial?.lightingModel = .physicallyBased
 			child.movabilityHint = .movable
+            child.name = self.idProduct + String(self.id)
+            self.node_ = child
 			wrapperNode.addChildNode(child)
+                
 		}
 //        wrapperNode.position = vector
 //        print("Have Object with name:", modelName)
@@ -49,15 +56,18 @@ class VirtualObject: SCNNode {
 		modelLoaded = true
         return true
 	}
-    
+
     func getName()-> String{
-        return self.idProduct
+        return self.idProduct + String(self.id)
     }
     func getId()->Int{
         return self.id
     }
     func getObject() -> SCNVector3{
         return wrapperNode.position
+    }
+    func getNode() -> SCNNode{
+        return node_
     }
 	func unloadModel() {
 		for child in self.childNodes {
@@ -67,11 +77,12 @@ class VirtualObject: SCNNode {
 		modelLoaded = false
 	}
 
+
 	func translateBasedOnScreenPos(_ pos: CGPoint, instantly: Bool, infinitePlane: Bool) {
 		guard let controller = viewController else {
 			return
 		}
-        print("run move in VR code")
+
 		let result = controller.worldPositionFromScreenPosition(pos, objectPos: self.position, infinitePlane: infinitePlane)
 		controller.moveVirtualObjectToPosition(result.position, instantly, !result.hitAPlane)
 	}

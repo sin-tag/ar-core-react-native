@@ -1,4 +1,3 @@
-// create by hoangtuyensk@gmail.com - github: sig-tag
 import React
 @available(iOS 11.0, *)
 @objc(ArCoreReactNativeViewManager)
@@ -10,13 +9,6 @@ class ArCoreReactNativeViewManager: RCTViewManager {
         view_.setBrigde(brigde: self.bridge)
         return view_
     }
-//    @objc func testAction(_ node:NSNumber, parameterName nameObject:NSString){
-//        DispatchQueue.main.async {
-//            print("run testAction")
-//            let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
-//            viewAr.usingBrigde()
-//        }
-//    }
     @objc func CMD_RUN_SET_OBJECT(_ node:NSNumber, parameterName nameObject: NSString, parameterID idProduct:NSString){
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
@@ -32,7 +24,8 @@ class ArCoreReactNativeViewManager: RCTViewManager {
     @objc func CMD_RUN_SET_DUPLICATE(_ node:NSNumber){
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
-          }
+            viewAr.duplicate = false;
+        }
     }
     @objc func CMD_RUN_GET_ID(_ node:NSNumber){
         DispatchQueue.main.async {
@@ -42,6 +35,12 @@ class ArCoreReactNativeViewManager: RCTViewManager {
     @objc func CMD_RUN_KILL_PROCESS(_ node:NSNumber){
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
+          }
+    }
+    @objc func CMD_RUN_SCREEN_SHORT(_ node:NSNumber){
+        DispatchQueue.main.async {
+            let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
+            viewAr.takeScreenshot()
           }
     }
 }
@@ -62,6 +61,8 @@ class ArCoreReactNativeView : UIView {
     var brigde_ : RCTBridge?;
     var sceneView: ARSCNView!;
     var currentNode: SCNNode?
+    var duplicate = false
+    var isSend = false
     var sessionConfig = ARWorldTrackingConfiguration();
     var recentVirtualObjectDistances = [CGFloat]()
     let DEFAULT_DISTANCE_CAMERA_TO_OBJECTS = Float(10)
@@ -98,6 +99,7 @@ class ArCoreReactNativeView : UIView {
         configuration.isLightEstimationEnabled = UserDefaults.standard.bool(for: .ambientLightEstimation)
         sceneView.delegate = self
         sceneView.session.run(configuration)
+        sceneView.autoenablesDefaultLighting = true
         setupFocusSquare();
         self.addSubview(sceneView)
     }
@@ -105,95 +107,79 @@ class ArCoreReactNativeView : UIView {
     @objc func removeObjectSeleted() {
         VirtualObjectsManager.shared.removeVirtualObjectSelected()
     }
-        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-            super.touchesBegan(touches, with: event)
-            guard let object = VirtualObjectsManager.shared.getVirtualObjectSelected() else {
+    // MARK: - Event for object
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        let touch = touches.first as! UITouch
+        if(touch.view == self.sceneView){
+            let viewTouchLocation:CGPoint = touch.location(in: sceneView)
+            guard let result = sceneView.hitTest(viewTouchLocation, options: nil).first else {
+                self.isSend = false
+                VirtualObjectsManager.shared.removeObjectSeletedNull()
                 return
             }
+            guard let object = VirtualObjectsManager.shared.getNodeEqual(node: result.node) else {
+                return
+            }
+            if !VirtualObjectsManager.shared.equalNode(node: result.node){
+                print("set true")
+                self.isSend = false
+            }
+            if !isSend{
+                let value = ["ID": object.getName()]
+
+                self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_NAME", body: value)
+                self.isSend = true
+            }
+            
             if currentGesture == nil {
                 currentGesture = Gesture.startGestureFromTouches(touches, self.sceneView, object)
             } else {
                 currentGesture = currentGesture!.updateGestureFromTouches(touches, .touchBegan)
             }
-    
+
             displayVirtualObjectTransform()
         }
-    @objc func moveNode(_ gesture: UIPanGestureRecognizer) {
-
-    //1. Get The Current Touch Point
-    let currentTouchPoint = gesture.location(in: self.sceneView)
-
-    //2. If The Gesture State Has Begun Perform A Hit Test To Get The SCNNode At The Touch Location
-    if gesture.state == .began{
-
-        //2a. Perform An SCNHitTest To Detect If An SCNNode Has Been Touched
-        guard let nodeHitTest = self.sceneView.hitTest(currentTouchPoint, options: nil).first else { return }
-
-        //2b. Get The SCNNode Result
-        let nodeHit = nodeHitTest.node
-
-        //2c. Set As The Current Node
-        currentNode = nodeHit
-
-    }
-    //3. If The Gesture State Has Changed Then Perform An ARSCNHitTest To Detect Any Existing Planes
-    if gesture.state == .changed{
-
-        //3b. Get The Next Feature Point Etc
-        guard let hitTest = self.sceneView.hitTest(currentTouchPoint, types: .existingPlane).first else { return }
-
-        //3c. Convert To World Coordinates
-        let worldTransform = hitTest.worldTransform
-
-        //3d. Set The New Position
-        let newPosition = SCNVector3(worldTransform.columns.3.x, worldTransform.columns.3.y, worldTransform.columns.3.z)
-
-        //3e. Apply To The Node
-        currentNode?.simdPosition = float3(newPosition.x, newPosition.y, newPosition.z)
-
-    }
-
-    //4. If The Gesture State Has Ended Remove The Reference To The Current Node
-    if gesture.state == .ended{
-        currentNode = nil
-       }
+        
     }
     
-        override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-            if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
-                return	
-            }
-            currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchMoved)
-            displayVirtualObjectTransform()
-            
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
+            return
         }
-    
-        override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-            let touch_ = touches.first!
-    //        print(touch_.location(in: self.view))
-            if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
-                let allObjects = VirtualObjectsManager.shared.getAllObjects()
-                for object in allObjects{
-                }
-    //            chooseObject(addObjectButton)
-                return
+        currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchMoved)
+        displayVirtualObjectTransform()
+        
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        let touch_ = touches.first!
+        if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
+            let allObjects = VirtualObjectsManager.shared.getAllObjects()
+            for object in allObjects{
             }
-    
-            currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchEnded)
+            return
+        }
+        
+
+        currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchEnded)
 //            self.bridge.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_TEST", body: "send nef")
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
+            return
         }
-    
-        override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-            if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
-                return
-            }
-            currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchCancelled)
-        }
+        currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchCancelled)
+    }
     
     
     // MARK: - Add obj
     
     func addObject(name: String, idProduct: String) {
+        if duplicate{
+            return;
+        }
         let object = VirtualObject(modelName: name, idProduct: idProduct);
         object.viewController = self
         let loaded = object.loadModel()
@@ -206,8 +192,9 @@ class ArCoreReactNativeView : UIView {
             return
         }
         VirtualObjectsManager.shared.addVirtualObject(virtualObject: object)
-        let value = ["ID": object.getName()]
-        self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_NAME", body:value )
+//        let value = ["ID":object.getName()]
+//        self.duplicate = true
+//        self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_NAME", body: value)
         DispatchQueue.main.async {
             if let lastFocusSquarePos = self.focusSquare?.lastPosition {
                 self.setNewVirtualObjectPosition(lastFocusSquarePos)
@@ -243,11 +230,8 @@ class ArCoreReactNativeView : UIView {
 
         let (worldPos, planeAnchor, _) = worldPositionFromScreenPosition(screenCenter, objectPos: focusSquare?.position)
         
-//        print("screen center: ", screenCenter)
         if let worldPos = worldPos {
             focusSquare?.update(for: worldPos, planeAnchor: planeAnchor, camera: sceneView.session.currentFrame?.camera)
-//            textManager.cancelScheduledMessage(forType: .focusSquare)
-//            print("update focus square")
         }
     }
     
@@ -305,7 +289,7 @@ class ArCoreReactNativeView : UIView {
         // 1. Always do a hit test against exisiting plane anchors first.
         //    (If any such anchors exist & only within their extents.)
 
-        let planeHitTestResults = sceneView.hitTest(position, types: .existingPlaneUsingExtent)
+        let planeHitTestResults = sceneView.hitTest(position, types: .existingPlane)
 //        print("plan:",planeHitTestResults)
         if let result = planeHitTestResults.first {
             let planeHitTestPosition = SCNVector3.positionFromTransform(result.worldTransform)
@@ -691,7 +675,6 @@ extension ArCoreReactNativeView {
             }
             return
         }
-        print("newPosition:", pos)
 
         if instantly {
             setNewVirtualObjectPosition(newPosition)
@@ -717,9 +700,49 @@ extension ArCoreReactNativeView {
             toastLabel.removeFromSuperview()
         })
     }
-//    @objc func usingBrigde(){
-//        print("run function")
-//        self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_TEST", body: "test brigde")
-//    }
-    
+    @objc func takeScreenshot() -> UIImage {
+
+            // Begin context
+            UIGraphicsBeginImageContextWithOptions(self.bounds.size, false, UIScreen.main.scale)
+
+            // Draw view in that context
+            drawHierarchy(in: self.bounds, afterScreenUpdates: true)
+
+            // And finally, get image
+            let image = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+
+            if (image != nil)
+            {
+                let fileName = saveImage(image: image!)
+                print(fileName)
+                return image!
+            }
+        return UIImage()
+   }
+    func saveImage(image: UIImage) -> Bool {
+        guard let data = image.jpegData(compressionQuality: 1) ?? image.pngData() else {
+            return false
+        }
+        guard let directory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) as NSURL else {
+            return false
+        }
+        do {
+            
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss "
+            let now = Date()
+            let dateString = formatter.string(from:now)
+            let dictory = directory.appendingPathComponent(dateString + "avr.png")
+            let value = ["PATH_FILE": dictory?.path]
+            try data.write(to: dictory!)
+            self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_PATH_FILE_SCREEN_SHORT", body: value)
+            return true
+        } catch {
+            print(error.localizedDescription)
+            let value = ["PATH_FILE": ""]
+            self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_PATH_FILE_SCREEN_SHORT", body: value)
+            return false
+        }
+    }
 }
