@@ -1,3 +1,4 @@
+# Our library is under development again promising to bring high performance, recently our team had to go to advanced training in 3D, so no one developed and fixed bugs. Sorry guys very much.
 # ar-core-react-native
 - ar-core-react-native build from ARKit on IOS and ARCore on Android.
 - It is opensource but performance of ios and android not optimal.
