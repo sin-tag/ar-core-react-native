@@ -1,118 +1,197 @@
 import React
-@available(iOS 11.0, *)
+@available(iOS 13.0, *)
 @objc(ArCoreReactNativeViewManager)
 class ArCoreReactNativeViewManager: RCTViewManager {
 
-//    @available(iOS 11.0, *)
     override func view() -> (ArCoreReactNativeView) {
         let view_ = ArCoreReactNativeView()
         view_.setBrigde(brigde: self.bridge)
         return view_
     }
-    @objc func CMD_RUN_SET_OBJECT(_ node:NSNumber, parameterName nameObject: NSString, parameterID idProduct:NSString){
+
+    override static func requiresMainQueueSetup() -> Bool {
+        return true
+    }
+
+    @objc func addObject(_ node: NSNumber, modelPath: NSString, objectId: NSString) {
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
-            viewAr.addObject(name: nameObject as String, idProduct:idProduct as String)
+            viewAr.addObject(name: modelPath as String, idProduct: objectId as String)
         }
     }
-    @objc func CMD_RUN_DELETE_OBJECT(_ node:NSNumber){
+
+    @objc func removeSelectedObject(_ node: NSNumber) {
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
             viewAr.removeObjectSeleted()
-          }
-    }
-    @objc func CMD_RUN_SET_DUPLICATE(_ node:NSNumber){
-        DispatchQueue.main.async {
-            let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
-            viewAr.duplicate = false;
         }
     }
-    @objc func CMD_RUN_GET_ID(_ node:NSNumber){
+
+    @objc func setDuplicate(_ node: NSNumber) {
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
-          }
+            viewAr.duplicate = false
+        }
     }
-    @objc func CMD_RUN_KILL_PROCESS(_ node:NSNumber){
-        DispatchQueue.main.async {
-            let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
-          }
-    }
-    @objc func CMD_RUN_SCREEN_SHORT(_ node:NSNumber){
+
+    @objc func takeScreenshot(_ node: NSNumber) {
         DispatchQueue.main.async {
             let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
             viewAr.takeScreenshot()
-          }
+        }
+    }
+
+    @objc func reset(_ node: NSNumber) {
+        DispatchQueue.main.async {
+            let viewAr = self.bridge.uiManager.view(forReactTag: node) as! ArCoreReactNativeView
+            viewAr.resetSession()
+        }
     }
 }
 
 import ARKit
 import SceneKit
 import Photos
-@available(iOS 11.0, *)
+
+@available(iOS 13.0, *)
 class ArCoreReactNativeView : UIView {
     var currentGesture: Gesture?
     var screenCenter: CGPoint?
     var dragOnInfinitePlanesEnabled = false
     var use3DOFTrackingFallback = false
     var trackingFallbackTimer: Timer?
-    var xPos:Float = 0;
-    var yPos:Float = 0;
-    var zPos: Float = 0;
-    var brigde_ : RCTBridge?;
-    var sceneView: ARSCNView!;
+    var xPos: Float = 0
+    var yPos: Float = 0
+    var zPos: Float = 0
+    var brigde_: RCTBridge?
+    var sceneView: ARSCNView!
     var currentNode: SCNNode?
     var duplicate = false
     var isSend = false
-    var sessionConfig = ARWorldTrackingConfiguration();
+    var sessionConfig = ARWorldTrackingConfiguration()
     var recentVirtualObjectDistances = [CGFloat]()
     let DEFAULT_DISTANCE_CAMERA_TO_OBJECTS = Float(10)
-    
+
+    // MARK: - Event callback props
+    @objc var onObjectSelected: RCTDirectEventBlock?
+    @objc var onScreenshot: RCTDirectEventBlock?
+    @objc var onPlaneDetected: RCTDirectEventBlock?
+    @objc var onTrackingStateChange: RCTDirectEventBlock?
+
+    // MARK: - Declarative props
+    @objc var planeDetection: NSString = "both" {
+        didSet {
+            reconfigureSession()
+        }
+    }
+
+    @objc var lightEstimation: Bool = true {
+        didSet {
+            reconfigureSession()
+        }
+    }
+
+    @objc var showPlanes: Bool = false
+    @objc var showFeaturePoints: Bool = false {
+        didSet {
+            if showFeaturePoints {
+                sceneView?.debugOptions = [ARSCNDebugOptions.showFeaturePoints, ARSCNDebugOptions.showWorldOrigin]
+            } else {
+                sceneView?.debugOptions = []
+            }
+        }
+    }
+
     override init(frame: CGRect) {
-        super.init(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height));
-        setup();
-        
+        super.init(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
+        setup()
     }
-    
+
     required init?(coder: NSCoder) {
-        super.init(coder: coder);
-        setup();
+        super.init(coder: coder)
+        setup()
     }
-    @ objc func setBrigde(brigde: RCTBridge){
+
+    @objc func setBrigde(brigde: RCTBridge) {
         self.brigde_ = brigde
     }
-    
+
+    // MARK: - Session configuration
+
+    func reconfigureSession() {
+        let configuration = ARWorldTrackingConfiguration()
+        switch planeDetection as String {
+        case "horizontal":
+            configuration.planeDetection = .horizontal
+        case "vertical":
+            configuration.planeDetection = .vertical
+        case "both":
+            configuration.planeDetection = [.horizontal, .vertical]
+        case "none":
+            configuration.planeDetection = []
+        default:
+            configuration.planeDetection = [.horizontal, .vertical]
+        }
+        configuration.isLightEstimationEnabled = lightEstimation
+        sceneView?.session.run(configuration)
+    }
+
     func setup() {
-        sceneView = ARSCNView();
-        self.sceneView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height);
+        sceneView = ARSCNView()
+        self.sceneView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
         DispatchQueue.main.async {
             self.screenCenter = self.sceneView.bounds.mid
         }
-//        sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin]
+
         let configuration = ARWorldTrackingConfiguration()
-        if #available(iOS 11.3, *){
-            configuration.planeDetection = [.horizontal, .vertical]
-        }
-        else{
-            configuration.planeDetection = .horizontal
-        }
-        
-        configuration.isLightEstimationEnabled = UserDefaults.standard.bool(for: .ambientLightEstimation)
+        configuration.planeDetection = [.horizontal, .vertical]
+        configuration.isLightEstimationEnabled = lightEstimation
+
         sceneView.delegate = self
+        sceneView.session.delegate = self
         sceneView.session.run(configuration)
         sceneView.autoenablesDefaultLighting = true
-        setupFocusSquare();
+        setupFocusSquare()
         self.addSubview(sceneView)
     }
-    
+
     @objc func removeObjectSeleted() {
         VirtualObjectsManager.shared.removeVirtualObjectSelected()
     }
-    // MARK: - Event for object
+
+    func resetSession() {
+        sceneView?.session.pause()
+        VirtualObjectsManager.shared.resetVirtualObjects()
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical]
+        configuration.isLightEstimationEnabled = lightEstimation
+        sceneView?.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
+
+    // MARK: - Event emission helpers
+
+    private func sendObjectSelectedEvent(id: String, selected: Bool) {
+        onObjectSelected?(["id": id, "selected": selected])
+    }
+
+    private func sendScreenshotEvent(path: String) {
+        onScreenshot?(["path": path])
+    }
+
+    private func sendPlaneDetectedEvent(id: String, type: String) {
+        onPlaneDetected?(["id": id, "type": type])
+    }
+
+    private func sendTrackingStateEvent(state: String, reason: String = "") {
+        onTrackingStateChange?(["state": state, "reason": reason])
+    }
+
+    // MARK: - Touch events
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         let touch = touches.first as! UITouch
         if(touch.view == self.sceneView){
-            let viewTouchLocation:CGPoint = touch.location(in: sceneView)
+            let viewTouchLocation: CGPoint = touch.location(in: sceneView)
             guard let result = sceneView.hitTest(viewTouchLocation, options: nil).first else {
                 self.isSend = false
                 VirtualObjectsManager.shared.removeObjectSeletedNull()
@@ -122,16 +201,13 @@ class ArCoreReactNativeView : UIView {
                 return
             }
             if !VirtualObjectsManager.shared.equalNode(node: result.node){
-                print("set true")
                 self.isSend = false
             }
-            if !isSend{
-                let value = ["ID": object.getName()]
-
-                self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_NAME", body: value)
+            if !isSend {
+                sendObjectSelectedEvent(id: object.getName(), selected: true)
                 self.isSend = true
             }
-            
+
             if currentGesture == nil {
                 currentGesture = Gesture.startGestureFromTouches(touches, self.sceneView, object)
             } else {
@@ -140,30 +216,21 @@ class ArCoreReactNativeView : UIView {
 
             displayVirtualObjectTransform()
         }
-        
     }
-    
+
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
             return
         }
         currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchMoved)
         displayVirtualObjectTransform()
-        
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        let touch_ = touches.first!
         if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
-            let allObjects = VirtualObjectsManager.shared.getAllObjects()
-            for object in allObjects{
-            }
             return
         }
-        
-
         currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchEnded)
-//            self.bridge.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_TEST", body: "send nef")
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -172,29 +239,23 @@ class ArCoreReactNativeView : UIView {
         }
         currentGesture = currentGesture?.updateGestureFromTouches(touches, .touchCancelled)
     }
-    
-    
-    // MARK: - Add obj
-    
+
+    // MARK: - Add object
+
     func addObject(name: String, idProduct: String) {
-        if duplicate{
-            return;
+        if duplicate {
+            return
         }
-        let object = VirtualObject(modelName: name, idProduct: idProduct);
+        let object = VirtualObject(modelName: name, idProduct: idProduct)
         object.viewController = self
         let loaded = object.loadModel()
-        if (loaded){
-            self.showToast(message: "Load object comlete!", font: .systemFont(ofSize: 13.0))
-            
-        }
-        else{
+        if loaded {
+            self.showToast(message: "Load object complete!", font: .systemFont(ofSize: 13.0))
+        } else {
             self.showToast(message: "Can't load object!", font: .systemFont(ofSize: 13.0))
             return
         }
         VirtualObjectsManager.shared.addVirtualObject(virtualObject: object)
-//        let value = ["ID":object.getName()]
-//        self.duplicate = true
-//        self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_NAME", body: value)
         DispatchQueue.main.async {
             if let lastFocusSquarePos = self.focusSquare?.lastPosition {
                 self.setNewVirtualObjectPosition(lastFocusSquarePos)
@@ -202,22 +263,18 @@ class ArCoreReactNativeView : UIView {
                 self.setNewVirtualObjectPosition(SCNVector3Zero)
             }
         }
-        
-        
     }
-    
-    
-    
+
     // MARK: - Focus Square
 
-    var focusSquare: FocusSquare?;
+    var focusSquare: FocusSquare?
     func setupFocusSquare() {
         focusSquare?.isHidden = true
         focusSquare?.removeFromParentNode()
         focusSquare = FocusSquare()
         sceneView.scene.rootNode.addChildNode(focusSquare!)
     }
-    
+
     func updateFocusSquare() {
         guard let screenCenter = screenCenter else { return }
 
@@ -229,33 +286,24 @@ class ArCoreReactNativeView : UIView {
         }
 
         let (worldPos, planeAnchor, _) = worldPositionFromScreenPosition(screenCenter, objectPos: focusSquare?.position)
-        
+
         if let worldPos = worldPos {
             focusSquare?.update(for: worldPos, planeAnchor: planeAnchor, camera: sceneView.session.currentFrame?.camera)
         }
     }
-    
+
     // MARK: - Debug Visualizations
     func refreshFeaturePoints() {
-        guard showDebugVisuals else {
+        guard showFeaturePoints else {
             return
         }
-
-        guard let cloud = sceneView.session.currentFrame?.rawFeaturePoints else {
+        guard sceneView.session.currentFrame?.rawFeaturePoints != nil else {
             return
-        }
-
-        DispatchQueue.main.async {
-//            self.featurePointCountLabel.text = "Features: \(cloud.__count)".uppercased()
         }
     }
 
     var showDebugVisuals: Bool = UserDefaults.standard.bool(for: .debugMode) {
         didSet {
-//            featurePointCountLabel.isHidden = !showDebugVisuals
-//            debugMessageLabel.isHidden = !showDebugVisuals
-//            messagePanel.isHidden = !showDebugVisuals
-//            planes.values.forEach { $0.showDebugVisualization(showDebugVisuals) }
             sceneView.debugOptions = []
             if showDebugVisuals {
                 sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints, ARSCNDebugOptions.showWorldOrigin]
@@ -263,13 +311,12 @@ class ArCoreReactNativeView : UIView {
             UserDefaults.standard.set(showDebugVisuals, for: .debugMode)
         }
     }
-    
+
     // MARK: - Hit Test Visualization
     var hitTestVisualization: HitTestVisualization?
 
     var showHitTestAPIVisualization = UserDefaults.standard.bool(for: .showHitTestAPI) {
         didSet {
-//            UserDefaults.standard.set(showHitTestAPIVisualization, for: .showHitTestAPI)
             if showHitTestAPIVisualization {
                 hitTestVisualization = HitTestVisualization(sceneView: sceneView)
             } else {
@@ -277,35 +324,24 @@ class ArCoreReactNativeView : UIView {
             }
         }
     }
-    
-    
+
+
     func worldPositionFromScreenPosition(_ position: CGPoint,
                                          objectPos: SCNVector3?,
                                          infinitePlane: Bool = false) -> (position: SCNVector3?,
                                                                           planeAnchor: ARPlaneAnchor?,
                                                                           hitAPlane: Bool) {
 
-        // -------------------------------------------------------------------------------
-        // 1. Always do a hit test against exisiting plane anchors first.
-        //    (If any such anchors exist & only within their extents.)
-
         let planeHitTestResults = sceneView.hitTest(position, types: .existingPlane)
-//        print("plan:",planeHitTestResults)
         if let result = planeHitTestResults.first {
             let planeHitTestPosition = SCNVector3.positionFromTransform(result.worldTransform)
             xPos = planeHitTestPosition.x
             yPos = planeHitTestPosition.y
             zPos = planeHitTestPosition.z
             let planeAnchor = result.anchor
-
-            // Return immediately - this is the best possible outcome.
             return (planeHitTestPosition, planeAnchor as? ARPlaneAnchor, true)
         }
-        
 
-        // -------------------------------------------------------------------------------
-        // 2. Collect more information about the environment by hit testing against
-        //    the feature point cloud, but do not return the result yet.
         var featureHitTestPosition: SCNVector3?
         var highQualityFeatureHitTestResult = false
 
@@ -318,32 +354,17 @@ class ArCoreReactNativeView : UIView {
             highQualityFeatureHitTestResult = true
         }
 
-        // -------------------------------------------------------------------------------
-        // 3. If desired or necessary (no good feature hit test result): Hit test
-        //    against an infinite, horizontal plane (ignoring the real world).
-
         if (infinitePlane && dragOnInfinitePlanesEnabled) || !highQualityFeatureHitTestResult {
-
             let pointOnPlane = objectPos ?? SCNVector3Zero
-
             let pointOnInfinitePlane = sceneView.hitTestWithInfiniteHorizontalPlane(position, pointOnPlane)
             if pointOnInfinitePlane != nil {
                 return (pointOnInfinitePlane, nil, true)
             }
         }
 
-        // -------------------------------------------------------------------------------
-        // 4. If available, return the result of the hit test against high quality
-        //    features if the hit tests against infinite planes were skipped or no
-        //    infinite plane was hit.
-
         if highQualityFeatureHitTestResult {
             return (featureHitTestPosition, nil, false)
         }
-
-        // -------------------------------------------------------------------------------
-        // 5. As a last resort, perform a second, unfiltered hit test against features.
-        //    If there are no features in the scene, the result returned here will be nil.
 
         let unfilteredFeatureHitTestResults = sceneView.hitTestWithFeatures(position)
         if !unfilteredFeatureHitTestResults.isEmpty {
@@ -353,9 +374,8 @@ class ArCoreReactNativeView : UIView {
 
         return (nil, nil, false)
     }
-    
-    func setNewVirtualObjectPosition(_ pos: SCNVector3) {
 
+    func setNewVirtualObjectPosition(_ pos: SCNVector3) {
         guard let object = VirtualObjectsManager.shared.getVirtualObjectSelected(),
               let cameraTransform = sceneView.session.currentFrame?.camera.transform else {
             return
@@ -376,9 +396,6 @@ class ArCoreReactNativeView : UIView {
 
     func resetVirtualObject() {
         VirtualObjectsManager.shared.resetVirtualObjects()
-
-//        addObjectButton.setImage(#imageLiteral(resourceName: "add"), for: [])
-//        addObjectButton.setImage(#imageLiteral(resourceName: "addPressed"), for: [.highlighted])
     }
 
     func updateVirtualObjectPosition(_ pos: SCNVector3, _ filterPosition: Bool) {
@@ -394,11 +411,6 @@ class ArCoreReactNativeView : UIView {
         var cameraToPosition = pos - cameraWorldPos
         cameraToPosition.setMaximumLength(DEFAULT_DISTANCE_CAMERA_TO_OBJECTS)
 
-        // Compute the average distance of the object from the camera over the last ten
-        // updates. If filterPosition is true, compute a new position for the object
-        // with this average. Notice that the distance is applied to the vector from
-        // the camera to the content, so it only affects the percieved distance of the
-        // object - the averaging does _not_ make the content "lag".
         let hitTestResultDistance = CGFloat(cameraToPosition.length())
 
         recentVirtualObjectDistances.append(hitTestResultDistance)
@@ -422,14 +434,12 @@ class ArCoreReactNativeView : UIView {
             return
         }
 
-        // Get the object's position in the plane's coordinate system.
         let objectPos = planeAnchorNode.convertPosition(object.position, from: object.parent)
 
         if objectPos.y == 0 {
-            return; // The object is already on the plane
+            return
         }
 
-        // Add 10% tolerance to the corners of the plane.
         let tolerance: Float = 0.1
 
         let minX: Float = anchor.center.x - anchor.extent.x / 2 - anchor.extent.x * tolerance
@@ -441,11 +451,8 @@ class ArCoreReactNativeView : UIView {
             return
         }
 
-        // Drop the object onto the plane if it is near it.
         let verticalAllowance: Float = 0.03
         if objectPos.y > -verticalAllowance && objectPos.y < verticalAllowance {
-//            textManager.showDebugMessage("OBJECT MOVED\nSurface detected nearby")
-
             SCNTransaction.begin()
             SCNTransaction.animationDuration = 0.5
             SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeInEaseOut)
@@ -453,62 +460,30 @@ class ArCoreReactNativeView : UIView {
             SCNTransaction.commit()
         }
     }
-    
-    
-    
-    // MARK: Gesture Recognized
-    
 
-    
     // MARK: - Planes
 
     var planes = [ARPlaneAnchor: Plane]()
 
     func addPlane(node: SCNNode, anchor: ARPlaneAnchor) {
-
-        let pos = SCNVector3.positionFromTransform(anchor.transform)
-//        textManager.showDebugMessage("NEW SURFACE DETECTED AT \(pos.friendlyString())")
-
         let plane = Plane(anchor)
-
         planes[anchor] = plane
         node.addChildNode(plane)
 
-//        textManager.cancelScheduledMessage(forType: .planeEstimation)
-//        textManager.showMessage("SURFACE DETECTED")
+        let type = anchor.alignment == .horizontal ? "horizontal" : "vertical"
+        sendPlaneDetectedEvent(id: anchor.identifier.uuidString, type: type)
+
         if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
-//            textManager.scheduleMessage("TAP + TO PLACE AN OBJECT", inSeconds: 7.5, messageType: .contentPlacement)
+            // Surface detected, ready for object placement
         }
     }
-
-  @objc var color: String = "" {
-    didSet {
-      self.backgroundColor = hexStringToUIColor(hexColor: color)
-    }
-  }
-
-  func hexStringToUIColor(hexColor: String) -> UIColor {
-    let stringScanner = Scanner(string: hexColor)
-
-    if(hexColor.hasPrefix("#")) {
-      stringScanner.scanLocation = 1
-    }
-    var color: UInt32 = 0
-    stringScanner.scanHexInt32(&color)
-
-    let r = CGFloat(Int(color >> 16) & 0x000000FF)
-    let g = CGFloat(Int(color >> 8) & 0x000000FF)
-    let b = CGFloat(Int(color) & 0x000000FF)
-
-    return UIColor(red: 255.0 / 255.0, green: 255.0 / 255.0, blue: 255.0 / 255.0, alpha: 1)
-  }
 }
 
 
-@available(iOS 11.0, *)
+// MARK: - ARSessionDelegate
+@available(iOS 13.0, *)
 extension ArCoreReactNativeView: ARSessionDelegate {
     func setupScene() {
-//        sceneView.setUp(viewController: self, session: session)
         sceneView.delegate = self
         sceneView.session = sceneView.session
         sceneView.antialiasingMode = .multisampling4X
@@ -516,33 +491,36 @@ extension ArCoreReactNativeView: ARSessionDelegate {
         sceneView.preferredFramesPerSecond = 60
         sceneView.contentScaleFactor = 1.3
         sceneView.enableEnvironmentMapWithIntensity(25.0)
-//        if let camera = pointOfView?.camera {
-//            camera.wantsHDR = true
-//            camera.wantsExposureAdaptation = true
-//            camera.exposureOffset = -1
-//            camera.minimumExposure = -1
-//        }
-        
     }
-    
-    func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
-//        textManager.showTrackingQualityInfo(for: camera.trackingState, autoHide: !self.showDebugVisuals)
 
+    func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
         switch camera.trackingState {
-        case .notAvailable: break
-//            textManager.escalateFeedback(for: camera.trackingState, inSeconds: 5.0)
-        case .limited:
+        case .notAvailable:
+            sendTrackingStateEvent(state: "notAvailable")
+        case .limited(let reason):
+            var reasonStr = ""
+            switch reason {
+            case .excessiveMotion:
+                reasonStr = "excessiveMotion"
+            case .insufficientFeatures:
+                reasonStr = "insufficientFeatures"
+            case .initializing:
+                reasonStr = "initializing"
+            case .relocalizing:
+                reasonStr = "relocalizing"
+            @unknown default:
+                reasonStr = "unknown"
+            }
+            sendTrackingStateEvent(state: "limited", reason: reasonStr)
+
             if use3DOFTrackingFallback {
-                // After 10 seconds of limited quality, fall back to 3DOF mode.
                 trackingFallbackTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false, block: { _ in
                     self.trackingFallbackTimer?.invalidate()
                     self.trackingFallbackTimer = nil
                 })
-            } else {
-//                textManager.escalateFeedback(for: camera.trackingState, inSeconds: 10.0)
             }
         case .normal:
-//            textManager.cancelScheduledMessage(forType: .trackingStateEscalation)
+            sendTrackingStateEvent(state: "normal")
             if use3DOFTrackingFallback && trackingFallbackTimer != nil {
                 trackingFallbackTimer!.invalidate()
                 trackingFallbackTimer = nil
@@ -567,27 +545,20 @@ extension ArCoreReactNativeView: ARSessionDelegate {
         } else {
             sessionErrorMsg += "\nThis is an unrecoverable error that requires to quit the application."
         }
-
-//        displayErrorMessage(title: "We're sorry!", message: sessionErrorMsg, allowRestart: isRecoverable)
     }
 
     func sessionWasInterrupted(_ session: ARSession) {
-//        textManager.blurBackground()
-//        textManager.showAlert(title: "Session Interrupted",
-//                              message: "The session will be reset after the interruption has ended.")
+        // Session was interrupted
     }
 
     func sessionInterruptionEnded(_ session: ARSession) {
-//        textManager.unblurBackground()
         session.run(sessionConfig, options: [.resetTracking, .removeExistingAnchors])
-//        restartExperience(self)
-//        textManager.showMessage("RESETTING SESSION")
     }
 }
 
 
 // MARK: - ARSCNViewDelegate
-@available(iOS 11.0, *)
+@available(iOS 13.0, *)
 extension ArCoreReactNativeView: ARSCNViewDelegate {
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         refreshFeaturePoints()
@@ -596,7 +567,6 @@ extension ArCoreReactNativeView: ARSCNViewDelegate {
             self.updateFocusSquare()
             self.hitTestVisualization?.render()
 
-            // If light estimation is enabled, update the intensity of the model's lights and the environment map
             if let lightEstimate = self.sceneView.session.currentFrame?.lightEstimate {
                 self.sceneView.enableEnvironmentMapWithIntensity(lightEstimate.ambientIntensity / 40)
             } else {
@@ -621,55 +591,41 @@ extension ArCoreReactNativeView: ARSCNViewDelegate {
                     plane.update(planeAnchor)
                 }
                 self.checkIfObjectShouldMoveOntoPlane(anchor: planeAnchor)
-//            }
+            }
         }
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
         DispatchQueue.main.async {
-//            if let planeAnchor = anchor as? ARPlaneAnchor, let plane = self.planes.removeValue(forKey: planeAnchor) {
-//                plane.removeFromParentNode()
-//            }
+            if let planeAnchor = anchor as? ARPlaneAnchor {
+                self.planes.removeValue(forKey: planeAnchor)
+            }
         }
     }
 }
 
-}
-
-
-
 
 // MARK: - Display View
-@available(iOS 11.0, *)
+@available(iOS 13.0, *)
 extension ArCoreReactNativeView {
     func displayVirtualObjectTransform() {
         guard let object = VirtualObjectsManager.shared.getVirtualObjectSelected(),
               let cameraTransform = self.sceneView.session.currentFrame?.camera.transform else {
             return
         }
-        
-        // Output the current translation, rotation & scale of the virtual object as text.
-        let cameraPos = SCNVector3.positionFromTransform(cameraTransform)
-        
-        let vectorToCamera = cameraPos - object.position
 
+        let cameraPos = SCNVector3.positionFromTransform(cameraTransform)
+        let vectorToCamera = cameraPos - object.position
         let distanceToUser = vectorToCamera.length()
 
         var angleDegrees = Int(((object.eulerAngles.y) * 180) / Float.pi) % 360
         if angleDegrees < 0 {
             angleDegrees += 360
         }
-
-        let distance = String(format: "%.2f", distanceToUser)
-        let scale = String(format: "%.2f", object.scale.x)
-//        textManager.showDebugMessage("Distance: \(distance) m\nRotation: \(angleDegrees)°\nScale: \(scale)x")
     }
 
     func moveVirtualObjectToPosition(_ pos: SCNVector3?, _ instantly: Bool, _ filterPosition: Bool) {
-
         guard let newPosition = pos else {
-//            textManager.showMessage("CANNOT PLACE OBJECT\nTry moving left or right.")
-            // Reset the content selection in the menu only if the content has not yet been initially placed.
             if !VirtualObjectsManager.shared.isAVirtualObjectPlaced() {
                 resetVirtualObject()
             }
@@ -682,17 +638,17 @@ extension ArCoreReactNativeView {
             updateVirtualObjectPosition(newPosition, filterPosition)
         }
     }
-    func showToast(message : String, font: UIFont) {
 
+    func showToast(message: String, font: UIFont) {
         let toastLabel = UILabel(frame: CGRect(x: UIScreen.main.bounds.width/2 - 75, y: UIScreen.main.bounds.height-100, width: 150, height: 35))
         toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
         toastLabel.textColor = UIColor.white
         toastLabel.font = font
-        toastLabel.textAlignment = .center;
+        toastLabel.textAlignment = .center
         toastLabel.text = message
         toastLabel.alpha = 1.0
-        toastLabel.layer.cornerRadius = 10;
-        toastLabel.clipsToBounds  =  true
+        toastLabel.layer.cornerRadius = 10
+        toastLabel.clipsToBounds = true
         self.sceneView.addSubview(toastLabel)
         UIView.animate(withDuration: 4.0, delay: 0.1, options: .curveEaseOut, animations: {
              toastLabel.alpha = 0.0
@@ -700,26 +656,21 @@ extension ArCoreReactNativeView {
             toastLabel.removeFromSuperview()
         })
     }
+
     @objc func takeScreenshot() -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(self.bounds.size, false, UIScreen.main.scale)
+        drawHierarchy(in: self.bounds, afterScreenUpdates: true)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
 
-            // Begin context
-            UIGraphicsBeginImageContextWithOptions(self.bounds.size, false, UIScreen.main.scale)
-
-            // Draw view in that context
-            drawHierarchy(in: self.bounds, afterScreenUpdates: true)
-
-            // And finally, get image
-            let image = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-
-            if (image != nil)
-            {
-                let fileName = saveImage(image: image!)
-                print(fileName)
-                return image!
-            }
+        if let image = image {
+            let saved = saveImage(image: image)
+            return image
+        }
+        sendScreenshotEvent(path: "")
         return UIImage()
-   }
+    }
+
     func saveImage(image: UIImage) -> Bool {
         guard let data = image.jpegData(compressionQuality: 1) ?? image.pngData() else {
             return false
@@ -728,20 +679,17 @@ extension ArCoreReactNativeView {
             return false
         }
         do {
-            
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss "
             let now = Date()
-            let dateString = formatter.string(from:now)
-            let dictory = directory.appendingPathComponent(dateString + "avr.png")
-            let value = ["PATH_FILE": dictory?.path]
-            try data.write(to: dictory!)
-            self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_PATH_FILE_SCREEN_SHORT", body: value)
+            let dateString = formatter.string(from: now)
+            let fileUrl = directory.appendingPathComponent(dateString + "avr.png")
+            try data.write(to: fileUrl!)
+            sendScreenshotEvent(path: fileUrl?.path ?? "")
             return true
         } catch {
             print(error.localizedDescription)
-            let value = ["PATH_FILE": ""]
-            self.brigde_?.eventDispatcher()?.sendAppEvent(withName: "EMIT_GET_PATH_FILE_SCREEN_SHORT", body: value)
+            sendScreenshotEvent(path: "")
             return false
         }
     }

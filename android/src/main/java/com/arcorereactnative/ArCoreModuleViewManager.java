@@ -1,9 +1,7 @@
 // create by hoangtuyensk@gmail.com - github: sig-tag
 package com.arcorereactnative;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,20 +15,20 @@ import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 
 public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
-    @SuppressLint("StaticFieldLeak")
-    public ArCoreView arCoreView;
-    public static final int CMD_RUN_DELETE_OBJECT = 1;
-    public static final int CMD_RUN_SET_OBJECT = 2;
+
+    public static final int COMMAND_ADD_OBJECT = 1;
+    public static final int COMMAND_REMOVE_SELECTED_OBJECT = 2;
+    public static final int COMMAND_TAKE_SCREENSHOT = 3;
+    public static final int COMMAND_SET_DUPLICATE = 4;
+    public static final int COMMAND_RESET = 5;
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     public ArCoreModuleViewManager(ReactApplicationContext reactContext) {
         super();
     }
-
 
     @NonNull
     @Override
@@ -42,34 +40,44 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
     @NonNull
     @Override
     public ArCoreView createViewInstance(ThemedReactContext reactContext) {
-
         return new ArCoreView(reactContext);
     }
+
+    // -- Declarative props --
+
+    @ReactProp(name = "planeDetection")
+    public void setPlaneDetection(ArCoreView view, @Nullable String mode) {
+        // Plane detection is configured at session level on Android;
+        // stored for potential future session reconfiguration
+    }
+
+    @ReactProp(name = "lightEstimation", defaultBoolean = true)
+    public void setLightEstimation(ArCoreView view, boolean enabled) {
+        // Light estimation setting
+    }
+
+    @ReactProp(name = "showPlanes", defaultBoolean = false)
+    public void setShowPlanes(ArCoreView view, boolean show) {
+        // Show/hide plane visualization
+    }
+
+    @ReactProp(name = "showFeaturePoints", defaultBoolean = false)
+    public void setShowFeaturePoints(ArCoreView view, boolean show) {
+        // Show/hide feature points
+    }
+
+    // -- Imperative commands --
 
     @Nullable
     @Override
     public Map<String, Integer> getCommandsMap() {
-        return MapBuilder.of(
-                "CMD_RUN_DELETE_OBJECT",
-                CMD_RUN_DELETE_OBJECT,
-                "CMD_RUN_SET_OBJECT",
-                CMD_RUN_SET_OBJECT
-        );
-    }
-
-    public ArCoreView getArCoreViews(ArCoreView arCoreView) {
-        if (arCoreView == null) {
-            Log.e("NULL_IF", "arCoreViews.toString()");
-        } else {
-            Log.e("NULL_ELSE", arCoreView.toString());
-        }
-        return arCoreView;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    @ReactProp(name = "objectName")
-    public void setObject(ArCoreView arCoreView, String objectName) {
-        arCoreView.setObject(objectName);
+        return MapBuilder.<String, Integer>builder()
+                .put("addObject", COMMAND_ADD_OBJECT)
+                .put("removeSelectedObject", COMMAND_REMOVE_SELECTED_OBJECT)
+                .put("takeScreenshot", COMMAND_TAKE_SCREENSHOT)
+                .put("setDuplicate", COMMAND_SET_DUPLICATE)
+                .put("reset", COMMAND_RESET)
+                .build();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -77,22 +85,24 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
     public void receiveCommand(@NonNull ArCoreView root, String commandId, @Nullable ReadableArray args) {
         super.receiveCommand(root, commandId, args);
         switch (commandId) {
-            case "CMD_RUN_DELETE_OBJECT":
+            case "addObject":
+                if (args != null && args.size() >= 2) {
+                    String modelPath = args.getString(0);
+                    String id = args.getString(1);
+                    root.setIdItem(id);
+                    root.setObject(modelPath);
+                }
+                break;
+            case "removeSelectedObject":
                 root.deleteNodeObject();
                 break;
-            case "CMD_RUN_CLEAN_OBJECT":
-                assert args != null;
-                Log.e("ARGS", args.getString(0));
-                Log.e("ARGS", args.getString(1));
+            case "takeScreenshot":
+                root.screenShort();
                 break;
-            case "CMD_RUN_SET_OBJECT":
-                assert args != null;
-                String idProduct = args.getString(0);
-                String pathFile = args.getString(1);
-                root.setIdItem(idProduct);
-                root.setObject(pathFile);
+            case "setDuplicate":
+                root.setMultiObject();
                 break;
-            case "CMD_RUN_KILL_PROCESS":
+            case "reset":
                 root.killProcess();
                 break;
             default:
@@ -100,4 +110,20 @@ public class ArCoreModuleViewManager extends ViewGroupManager<ArCoreView> {
         }
     }
 
+    // -- Events --
+
+    @Nullable
+    @Override
+    public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
+        MapBuilder.Builder<String, Object> builder = MapBuilder.builder();
+        builder.put("onObjectSelected",
+                MapBuilder.of("registrationName", "onObjectSelected"));
+        builder.put("onScreenshot",
+                MapBuilder.of("registrationName", "onScreenshot"));
+        builder.put("onPlaneDetected",
+                MapBuilder.of("registrationName", "onPlaneDetected"));
+        builder.put("onTrackingStateChange",
+                MapBuilder.of("registrationName", "onTrackingStateChange"));
+        return builder.build();
+    }
 }

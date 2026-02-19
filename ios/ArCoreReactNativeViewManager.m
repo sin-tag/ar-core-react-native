@@ -3,12 +3,23 @@
 
 @interface RCT_EXTERN_MODULE(ArCoreReactNativeViewManager, RCTViewManager)
 
-RCT_EXPORT_VIEW_PROPERTY(color, NSString)
-//RCT_EXTERN_METHOD(testAction:(nonnull NSNumber *)node parameterName:(NSString *)nameObject)
-RCT_EXTERN_METHOD(CMD_RUN_SET_OBJECT:(nonnull NSNumber *)node parameterName:(NSString *)nameObject parameterID:(NSString *)idProduct)
-RCT_EXTERN_METHOD(CMD_RUN_DELETE_OBJECT:(nonnull NSNumber *)node)
-RCT_EXTERN_METHOD(CMD_RUN_SET_DUPLICATE:(nonnull NSNumber *)node)
-RCT_EXTERN_METHOD(CMD_RUN_GET_ID:(nonnull NSNumber *)node)
-RCT_EXTERN_METHOD(CMD_RUN_KILL_PROCESS:(nonnull NSNumber *)node)
-@end
+// Declarative props
+RCT_EXPORT_VIEW_PROPERTY(planeDetection, NSString)
+RCT_EXPORT_VIEW_PROPERTY(lightEstimation, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(showPlanes, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(showFeaturePoints, BOOL)
 
+// Event callbacks
+RCT_EXPORT_VIEW_PROPERTY(onObjectSelected, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onScreenshot, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onPlaneDetected, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onTrackingStateChange, RCTDirectEventBlock)
+
+// Imperative commands
+RCT_EXTERN_METHOD(addObject:(nonnull NSNumber *)node modelPath:(NSString *)modelPath objectId:(NSString *)objectId)
+RCT_EXTERN_METHOD(removeSelectedObject:(nonnull NSNumber *)node)
+RCT_EXTERN_METHOD(setDuplicate:(nonnull NSNumber *)node)
+RCT_EXTERN_METHOD(takeScreenshot:(nonnull NSNumber *)node)
+RCT_EXTERN_METHOD(reset:(nonnull NSNumber *)node)
+
+@end

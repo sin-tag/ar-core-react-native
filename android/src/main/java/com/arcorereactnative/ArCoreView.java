@@ -5,18 +5,15 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.PixelCopy;
-import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -25,8 +22,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Frame;
 import com.google.ar.core.Pose;
@@ -38,7 +37,6 @@ import com.google.ar.sceneform.Scene;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.rendering.Renderable;
-import com.google.ar.sceneform.rendering.Texture;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
@@ -47,10 +45,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.File;
 
@@ -70,8 +65,30 @@ public class ArCoreView extends FrameLayout {
     this.context = context;
     this.reactActivity = (ReactActivity) context.getCurrentActivity();
     init();
-
   }
+
+  // -- Event emission helpers --
+
+  private void sendEvent(String eventName, WritableMap data) {
+    ReactContext reactContext = (ReactContext) getContext();
+    reactContext.getJSModule(RCTEventEmitter.class)
+        .receiveEvent(getId(), eventName, data);
+  }
+
+  private void sendObjectSelectedEvent(String id, boolean selected) {
+    WritableMap map = Arguments.createMap();
+    map.putString("id", id);
+    map.putBoolean("selected", selected);
+    sendEvent("onObjectSelected", map);
+  }
+
+  private void sendScreenshotEvent(String path) {
+    WritableMap map = Arguments.createMap();
+    map.putString("path", path);
+    sendEvent("onScreenshot", map);
+  }
+
+  // -- Initialization --
 
   @SuppressLint("ShowToast")
   @RequiresApi(api = Build.VERSION_CODES.N)
@@ -98,7 +115,6 @@ public class ArCoreView extends FrameLayout {
       anchorNode.setParent(arFragment.getArSceneView().getScene());
       anchorNode.setName(idItem);
 
-      // add
       TransformableNode object = new TransformableNode(arFragment.getTransformationSystem());
       object.setParent(anchorNode);
       object.setRenderable(objectRender);
@@ -108,24 +124,16 @@ public class ArCoreView extends FrameLayout {
       object.getScaleController().setEnabled(true);
       object.setOnTouchListener(new Node.OnTouchListener() {
         @Override
-        public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent) {
-
+        public boolean onTouch(HitTestResult hitTestResult, MotionEvent motionEvent1) {
           if (anchorNodeDelete != null && anchorNodeDelete.getName().equalsIgnoreCase(anchorNode.getName())) {
             if (returnID) {
               anchorNodeDelete = anchorNode;
-              WritableMap map = Arguments.createMap();
-              map.putString("ID", anchorNodeDelete.getName());
-              map.putString("SELECTED", "TRUE");
-              ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
-
+              sendObjectSelectedEvent(anchorNodeDelete.getName(), true);
               returnID = false;
             }
           } else {
             anchorNodeDelete = anchorNode;
-            WritableMap map = Arguments.createMap();
-            map.putString("ID", "");
-            map.putString("SELECTED", "TRUE");
-            ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+            sendObjectSelectedEvent("", true);
             returnID = false;
           }
           return true;
@@ -139,10 +147,7 @@ public class ArCoreView extends FrameLayout {
         if (anchorNodeDelete == null) {
           returnID = true;
         } else {
-          WritableMap map = Arguments.createMap();
-          map.putString("ID", "");
-          map.putString("SELECTED", "FALSE");
-          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
+          sendObjectSelectedEvent("", false);
           anchorNodeDelete = null;
         }
         return true;
@@ -150,19 +155,14 @@ public class ArCoreView extends FrameLayout {
     });
   }
 
-  public void getNameWithEmitter() {
-    WritableMap map = Arguments.createMap();
-    map.putString("IdProduct", "");
-    ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_NAME, map);
-  }
-
+  // -- Object management --
 
   @RequiresApi(api = Build.VERSION_CODES.N)
   public boolean setObject(String uriString) {
     AtomicBoolean loadComplete = new AtomicBoolean(true);
     WeakReference<ArCoreView> weakActivity = new WeakReference<>(this);
     Uri uri = Uri.fromFile(new File(uriString));
-    Log.e("PATH_FILE", uri.toString());
+    Log.d("ArCoreView", "Loading model: " + uri.toString());
     ModelRenderable.builder()
       .setSource((AppCompatActivity) context.getCurrentActivity(), uri)
       .setIsFilamentGltf(true)
@@ -177,14 +177,13 @@ public class ArCoreView extends FrameLayout {
       .exceptionally(
         throwable -> {
           Toast toast =
-            Toast.makeText((AppCompatActivity) context.getCurrentActivity(), "Unable to load Tiger renderable", Toast.LENGTH_LONG);
+            Toast.makeText((AppCompatActivity) context.getCurrentActivity(), "Unable to load model", Toast.LENGTH_LONG);
           toast.setGravity(Gravity.CENTER, 0, 0);
           toast.show();
-          Log.e("Load", "Load obj");
+          Log.e("ArCoreView", "Error loading model", throwable);
           return null;
         });
-    Toast.makeText((AppCompatActivity) context.getCurrentActivity(), "Select object complete", Toast.LENGTH_LONG);
-    Log.d("CMD_RUN_SET_OBJECT", "Load object complete");
+    Log.d("ArCoreView", "Load object complete");
     multiObject = true;
     return loadComplete.get();
   }
@@ -195,7 +194,6 @@ public class ArCoreView extends FrameLayout {
     Pose camera = frame.getCamera().getPose();
     Vector3 objectMatrix = anchorNodeDelete.getWorldPosition();
     Double distance = calculateDistance(objectMatrix, camera);
-
   }
 
   private Double calculateDistance(Vector3 objectPose0, Pose objectPose1) {
@@ -220,10 +218,8 @@ public class ArCoreView extends FrameLayout {
       anchorNodeDelete.setParent(null);
       anchorNodeDelete = null;
       idItem = "";
-      Log.d("CMD_DELETE_OBJECT", "Delete object complete!");
+      Log.d("ArCoreView", "Delete object complete");
     }
-
-
   }
 
   public String getIdItem() {
@@ -240,7 +236,7 @@ public class ArCoreView extends FrameLayout {
 
   public void killProcess() {
     try {
-      Log.e("REMOVE_KILL", "RUN START");
+      Log.d("ArCoreView", "Reset AR session");
       ((AppCompatActivity) context.getCurrentActivity()).getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
       Thread threadPause = new Thread() {
         @Override
@@ -268,21 +264,20 @@ public class ArCoreView extends FrameLayout {
             throwable.printStackTrace();
           } finally {
             System.gc();
-            Log.e("REMOVE_KILL", "END START");
+            Log.d("ArCoreView", "AR session closed");
           }
         }
       };
       thread.start();
     } catch (Exception e) {
-      System.out.println(e.toString());
+      Log.e("ArCoreView", "Error during reset", e);
     }
-
   }
 
   @Override
   protected void onDetachedFromWindow() {
     super.onDetachedFromWindow();
-    
+
     ((AppCompatActivity) context.getCurrentActivity()).getSupportFragmentManager().beginTransaction().remove(arFragment).commitAllowingStateLoss();
     Thread threadPause = new Thread() {
       @Override
@@ -305,12 +300,11 @@ public class ArCoreView extends FrameLayout {
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
-          Log.e("END_", "Finish");
+          Log.d("ArCoreView", "Detached and cleaned up");
         }
       }
     };
     thread.start();
-
   }
 
   public static boolean checkIsSupportedDeviceOrFinish(final Activity activity) {
@@ -334,18 +328,17 @@ public class ArCoreView extends FrameLayout {
     return true;
   }
 
+  // -- Screenshot --
+
   @RequiresApi(api = Build.VERSION_CODES.N)
   public void screenShort() {
     ArSceneView view = arFragment.getArSceneView();
 
-    // Create a bitmap the size of the scene view.
     final Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
       Bitmap.Config.ARGB_8888);
 
-    // Create a handler thread to offload the processing of the image.
     final HandlerThread handlerThread = new HandlerThread("PixelCopier");
     handlerThread.start();
-    // Make the request to copy.
     PixelCopy.request(view, bitmap, (copyResult) -> {
       if (copyResult == PixelCopy.SUCCESS) {
         try {
@@ -354,17 +347,15 @@ public class ArCoreView extends FrameLayout {
           Toast toast = Toast.makeText(((AppCompatActivity) context.getCurrentActivity()), e.toString(),
             Toast.LENGTH_LONG);
           toast.show();
-          WritableMap map = Arguments.createMap();
-          map.putString("PATH_FILE", "");
-          ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
+          sendScreenshotEvent("");
           return;
         }
       } else {
+        sendScreenshotEvent("");
       }
       handlerThread.quitSafely();
     }, new Handler(handlerThread.getLooper()));
   }
-
 
   public void saveBitmapToDisk(Bitmap bitmap) throws IOException {
     File imageScreen = new File(context.getDir("images", Context.MODE_PRIVATE).toString());
@@ -378,8 +369,6 @@ public class ArCoreView extends FrameLayout {
     bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fileOutputStream);
     fileOutputStream.flush();
     fileOutputStream.close();
-    WritableMap map = Arguments.createMap();
-    map.putString("PATH_FILE", mediaFile.getPath());
-    ModuleWithEmitter.sendEvent(context, ModuleWithEmitter.EMIT_GET_PATH_FILE_SCREEN_SHORT, map);
+    sendScreenshotEvent(mediaFile.getPath());
   }
 }

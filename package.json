@@ -1,7 +1,7 @@
 {
   "name": "ar-core-react-native",
-  "version": "1.2.4",
-  "description": "ARCore and ARKit for React native",
+  "version": "2.0.0",
+  "description": "ARCore and ARKit for React Native - AR component with props, refs and event callbacks",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/index.d.ts",
